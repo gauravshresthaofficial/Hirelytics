@@ -184,8 +184,8 @@ const CandidateFormModal = ({
         <Row gutter={16}>
           <Col span={12}>
             <Form.Item
-              name="experience (Years)"
-              label="Experience"
+              name="experience"
+              label="Experience (Years)"
               rules={[{ required: true, message: "Please enter experience" }]}
             >
               <Input placeholder="e.g., 5 years" />
