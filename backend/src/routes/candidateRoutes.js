@@ -46,13 +46,13 @@ router.post(
 router.put(
   "/:candidateId/assessments/:assessmentId",
   protect,
-  authorize("evaluator", "admin"),
+  authorize("evaluator", "admin", "hr"),
   updateCandidateAssessment
 );
 router.put(
   "/:candidateId/assessments/:assessmentId/complete",
   protect,
-  authorize("evaluator", "admin"),
+  authorize("evaluator", "admin", "hr"),
   completeCandidateAssessment
 );
 
@@ -65,14 +65,14 @@ router.post(
 router.put(
   "/:candidateId/interviews/:interviewId",
   protect,
-  authorize("evaluator", "admin"),
+  authorize("evaluator", "admin", "hr"),
   updateCandidateInterview
 );
 
 router.put(
   "/:candidateId/interviews/:interviewId/complete",
   protect,
-  authorize("evaluator", "admin"),
+  authorize("evaluator", "admin", "hr"),
   completeCandidateInterview
 );
 
