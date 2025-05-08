@@ -1,0 +1,193 @@
+const mongoose = require("mongoose");
+
+const candidateSchema = new mongoose.Schema(
+  {
+    fullName: {
+      type: String,
+      required: true,
+      trim: true,
+    },
+    email: {
+      type: String,
+      required: true,
+      unique: true,
+      trim: true,
+      lowercase: true,
+    },
+    phoneNumber: {
+      type: String,
+      trim: true,
+    },
+    applicationDate: {
+      type: Date,
+      default: Date.now,
+    },
+    appliedPosition: {
+      type: String,
+      trim: true,
+    },
+    level: {
+      type: String,
+      enum: [
+        "Entry-Level",
+        "Junior",
+        "Mid-Level",
+        "Senior",
+        "Lead",
+        "Manager",
+        "Executive",
+      ],
+      default: "Entry-Level",
+      trim: true,
+    },
+    experience: {
+      type: String,
+      trim: true,
+    },
+    educationBackground: {
+      type: String,
+      trim: true,
+    },
+    skills: [{ type: String, trim: true }],
+    currentStatus: {
+      type: String,
+      enum: [
+        "Applied",
+
+        "Assessment Scheduled",
+        "Assessment In Progress",
+        "Assessment Completed",
+        "Assessment Evaluated",
+
+        "Interview Scheduled",
+        "Interview In Progress",
+        "Interview Completed",
+        "Interview Evaluated",
+        "Offer Extended",
+        "Offer Accepted",
+        "Hired",
+        "Rejected",
+        "Withdrawn",
+      ],
+      default: "Applied",
+      trim: true,
+    },
+    source: { type: String, trim: true },
+    notes: { type: String, trim: true },
+    assessments: [
+      {
+        assessmentId: {
+          type: mongoose.Schema.Types.ObjectId,
+          ref: "Assessment",
+        },
+        assessmentName: { type: String, trim: true },
+        sequence: { type: Number, required: true },
+        assignedEvaluatorId: {
+          type: mongoose.Schema.Types.ObjectId,
+          ref: "User",
+        },
+        scheduledDate: { type: Date },
+        score: { type: Number, min: 0 },
+        maxScore: { type: Number, min: 1 },
+        remarks: { type: String, trim: true },
+        evaluatedBy: { type: String, trim: true },
+        evaluationDate: { type: Date },
+        status: {
+          type: String,
+          enum: [
+            "Scheduled",
+            "In Progress",
+            "Completed",
+            "Evaluated",
+            "Cancelled",
+          ],
+          default: "Scheduled",
+          trim: true,
+        },
+        createdAt: { type: Date, default: Date.now },
+        updatedAt: { type: Date, default: Date.now },
+      },
+    ],
+    interviews: [
+      {
+        interviewId: {
+          type: mongoose.Schema.Types.ObjectId,
+          ref: "Interview",
+        },
+        sequence: { type: Number, required: true },
+        interviewName: { type: String, required: true },
+        interviewType: { type: String, trim: true },
+        assignedEvaluatorId: {
+          type: mongoose.Schema.Types.ObjectId,
+          ref: "User",
+        },
+        interviewerName: { type: String, trim: true, required: true },
+        scheduledDatetime: { type: Date },
+        interviewLocation: { type: String, trim: true },
+        interviewLink: { type: String, trim: true },
+        score: { type: Number, min: 0 },
+        maxScore: { type: Number, min: 1, default: 100 },
+        remarks: { type: String, trim: true },
+        conductedDate: { type: Date },
+        status: {
+          type: String,
+          enum: [
+            "Scheduled",
+            "In Progress",
+            "Completed",
+            "Evaluated",
+            "Cancelled",
+          ],
+          default: "Scheduled",
+          trim: true,
+        },
+        createdAt: { type: Date, default: Date.now },
+        updatedAt: { type: Date, default: Date.now },
+      },
+    ],
+    offer: {
+      offerId: { type: mongoose.Schema.Types.ObjectId },
+      offeredPositionId: {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: "Position",
+      },
+      offeredPositionName: { type: String, trim: true },
+      offerDate: { type: Date },
+      salary: { type: Number, min: 0 },
+      benefits: { type: String, trim: true },
+      offerStatus: {
+        type: String,
+        enum: ["Pending", "Accepted", "Rejected"],
+        trim: true,
+      },
+      acceptanceDate: { type: Date },
+      rejectionDate: { type: Date },
+    },
+    hiredDetails: {
+      hiredId: { type: mongoose.Schema.Types.ObjectId },
+      positionId: { type: mongoose.Schema.Types.ObjectId, ref: "Position" },
+      positionName: { type: String, trim: true },
+      hiringDate: { type: Date },
+      startDate: { type: Date },
+      agreedSalary: { type: Number, min: 0 },
+      hiredBy: { type: mongoose.Schema.Types.ObjectId, ref: "User" },
+    },
+    rejectionDetails: {
+      rejectedBy: { type: mongoose.Schema.Types.ObjectId, ref: "User" },
+      rejectionReason: { type: String, trim: true },
+      rejectionDate: { type: Date },
+    },
+    withdrawalDetails: {
+      withdrawnBy: { type: mongoose.Schema.Types.ObjectId, ref: "User" },
+      withdrawalReason: { type: String, trim: true },
+      withdrawalDate: { type: Date },
+    },
+    createdBy: { type: mongoose.Schema.Types.ObjectId, ref: "User" },
+    updatedBy: { type: mongoose.Schema.Types.ObjectId, ref: "User" },
+    createdAt: { type: Date, default: Date.now },
+    updatedAt: { type: Date, default: Date.now },
+  },
+  { timestamps: true }
+);
+
+module.exports = mongoose.model("Candidate", candidateSchema);

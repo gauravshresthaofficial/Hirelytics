@@ -1,0 +1,237 @@
+import React, { useEffect, useMemo, useState } from "react";
+import { useDispatch, useSelector } from "react-redux";
+import { useNavigate, useLocation } from "react-router-dom";
+import {
+  fetchCandidates,
+  createCandidate,
+  updateCandidate,
+} from "../features/candidate/candidateSlice";
+import {
+  Card,
+  Row,
+  Col,
+  Typography,
+  Button,
+  Select,
+  Input,
+  message,
+  Space,
+  Flex,
+} from "antd";
+import CandidateTable from "../components/Candidates/CandidateTable";
+import CandidateFormModal from "../components/Candidates/CandidateFormModal";
+import { fetchPositions } from "../features/position/positionSlice";
+import { SearchOutlined, PlusCircleOutlined } from "@ant-design/icons";
+
+const { Title } = Typography;
+const { Option } = Select;
+
+const CandidatePage = () => {
+  const dispatch = useDispatch();
+  const navigate = useNavigate();
+  const location = useLocation();
+  const { status } = location.state || "";
+
+  const { data: candidates, loading } = useSelector(
+    (state) => state.candidates
+  );
+  const positions = useSelector((state) => state.positions.data);
+
+  const [searchText, setSearchText] = useState("");
+  const [statusFilter, setStatusFilter] = useState(status);
+  const [positionFilter, setPositionFilter] = useState("");
+  const [levelFilter, setLevelFilter] = useState("");
+  const [pagination, setPagination] = useState({ current: 1, pageSize: 10 });
+  const [isModalVisible, setIsModalVisible] = useState(false);
+  const [isEditing, setIsEditing] = useState(false);
+  const [editingCandidate, setEditingCandidate] = useState(null);
+
+  useEffect(() => {
+    if (!candidates.length) dispatch(fetchCandidates());
+  }, [dispatch, candidates]);
+
+  useEffect(() => {
+    if (!positions.length) dispatch(fetchPositions());
+  }, [dispatch, positions]);
+
+  useEffect(() => {
+    if (location.state?.pagination) {
+      setPagination(location.state.pagination);
+    }
+  }, [location.state]);
+
+  const handleSearchChange = (value) => {
+    setSearchText(value.toLowerCase());
+  };
+
+  const handleStatusFilterChange = (value) => {
+    setStatusFilter(value);
+  };
+
+  const handlePositionFilterChange = (value) => {
+    setPositionFilter(value);
+  };
+
+  const handleLevelFilterChange = (value) => {
+    setLevelFilter(value);
+  };
+
+  const handlePaginationChange = (current, pageSize) => {
+    setPagination({ current, pageSize });
+  };
+
+  const handleViewProfile = (candidate) => {
+    navigate(`/candidates/${candidate._id}`, {
+      state: { pagination },
+    });
+  };
+
+  const handleCreate = () => {
+    setIsEditing(false);
+    setEditingCandidate(null);
+    setIsModalVisible(true);
+  };
+
+  const handleEdit = (candidate) => {
+    setIsEditing(true);
+    setEditingCandidate(candidate);
+    setIsModalVisible(true);
+  };
+
+  const role = useSelector((state) => state.auth.user.role);
+
+  const handleSubmit = async (candidateData) => {
+    try {
+      if (isEditing) {
+        await dispatch(
+          updateCandidate({
+            id: editingCandidate._id,
+            updatedData: candidateData,
+          })
+        ).unwrap();
+        message.success("Candidate updated successfully!");
+      } else {
+        await dispatch(createCandidate(candidateData)).unwrap();
+        message.success("The candidate was created Successfully");
+      }
+      setIsModalVisible(false);
+    } catch (err) {
+      message.error(err || "Failed to save candidate.");
+    }
+  };
+
+  const filteredCandidates = useMemo(() => {
+    return candidates?.filter((candidate) => {
+      const matchesSearch =
+        candidate?.fullName?.toLowerCase().includes(searchText) ||
+        candidate?.email?.toLowerCase().includes(searchText);
+      const matchesStatus = statusFilter
+        ? candidate.currentStatus === statusFilter
+        : true;
+      const matchesPosition = positionFilter
+        ? candidate.appliedPosition === positionFilter
+        : true;
+      const matchesLevel = levelFilter ? candidate.level === levelFilter : true;
+      return matchesSearch && matchesStatus && matchesPosition && matchesLevel;
+    });
+  }, [candidates, searchText, statusFilter, positionFilter, levelFilter]);
+
+  const positionOptions = positions.map((position) => ({
+    value: position.positionName,
+    label: position.positionName,
+  }));
+
+  return (
+    <Card style={{ width: "100%", overflowY: "auto" }}>
+      <Flex justify="space-between" style={{ marginBottom: "16px" }}>
+        <Space gap="small">
+          <Input
+            placeholder="Search by name or email"
+            prefix={<SearchOutlined />}
+            value={searchText}
+            onChange={(e) => handleSearchChange(e.target.value)}
+            style={{ width: 300 }}
+          />
+          {/* Filters */}
+          <Select
+            placeholder="Select position"
+            style={{ width: "12rem" }}
+            onChange={handlePositionFilterChange}
+            allowClear
+            options={positionOptions}
+          />
+          <Select
+            placeholder="Select status"
+            style={{ width: "12rem" }}
+            value={statusFilter}
+            onChange={handleStatusFilterChange}
+            allowClear
+          >
+            <Option value="Applied">Applied</Option>
+            <Option value="Assessment Scheduled">Assessment Scheduled</Option>
+            <Option value="Assessment In Progress">
+              Assessment In Progress
+            </Option>
+            <Option value="Assessment Completed">Assessment Completed</Option>
+            <Option value="Assessment Evaluated">Assessment Evaluated</Option>
+            <Option value="Interview Scheduled">Interview Scheduled</Option>
+            <Option value="Interview In Progress">Interview In Progress</Option>
+            <Option value="Interview Completed">Interview Completed</Option>
+            <Option value="Interview Evaluated">Interview Evaluated</Option>
+            <Option value="Offer Extended">Offer Extended</Option>
+            <Option value="Offer Accepted">Offer Accepted</Option>
+            <Option value="Hired">Hired</Option>
+            <Option value="Rejected">Rejected</Option>
+          </Select>
+
+          <Select
+            placeholder="Select level"
+            style={{ width: "12rem" }}
+            allowClear
+            options={[
+              { value: "Entry-Level", label: "Entry-Level" },
+              { value: "Junior", label: "Junior" },
+              { value: "Mid-Level", label: "Mid-Level" },
+              { value: "Senior", label: "Senior" },
+              { value: "Lead", label: "Lead" },
+              { value: "Manager", label: "Manager" },
+              { value: "Executive", label: "Executive" },
+            ]}
+            onChange={handleLevelFilterChange}
+          />
+        </Space>
+        {role.toLowerCase() != "evaluator" && (
+          <Button
+            type="primary"
+            icon={<PlusCircleOutlined />}
+            onClick={handleCreate}
+          >
+            Create Candidate
+          </Button>
+        )}
+      </Flex>
+
+      {/* Table */}
+      <CandidateTable
+        data={filteredCandidates}
+        loading={loading}
+        pagination={pagination}
+        onPaginationChange={handlePaginationChange}
+        onViewProfile={handleViewProfile}
+        onEdit={handleEdit}
+      />
+
+      {/* Modal */}
+      <CandidateFormModal
+        open={isModalVisible}
+        onCancel={() => setIsModalVisible(false)}
+        onSubmit={handleSubmit}
+        isEditing={isEditing}
+        initialValues={editingCandidate}
+        positionOptions={positionOptions}
+      />
+    </Card>
+  );
+};
+
+export default CandidatePage;
