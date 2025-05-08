@@ -11,6 +11,7 @@ import {
   Typography,
   Divider,
   Flex,
+  message,
 } from "antd";
 import moment from "moment";
 
@@ -48,6 +49,7 @@ const CandidateFormModal = ({
         form.resetFields();
       }
     } catch (error) {
+      message.error("Validation Error.");
       console.error("Validation Failed:", error);
     }
   };
@@ -86,7 +88,12 @@ const CandidateFormModal = ({
         </Flex>
       }
     >
-      <Form form={form} layout="vertical" preserve={false}>
+      <Form
+        form={form}
+        layout="vertical"
+        preserve={false}
+        scrollToFirstError={true}
+      >
         <Divider plain orientation="left">
           Personal Information
         </Divider>

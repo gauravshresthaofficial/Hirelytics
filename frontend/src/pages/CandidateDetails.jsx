@@ -99,6 +99,8 @@ const CandidateDetails = () => {
 
   if (!candidate) {
     return <div>Loading candidate details...</div>;
+  } else {
+    console.log(candidate);
   }
 
   const getStepStatus = (stageData, type) => {
