@@ -4,7 +4,6 @@ import { useParams, useNavigate } from "react-router-dom";
 import {
   deleteAssessment,
   fetchAssessments,
-  updateAssessment,
 } from "../features/assessment/assessmentSlice";
 import { fetchCandidates } from "../features/candidate/candidateSlice";
 import {

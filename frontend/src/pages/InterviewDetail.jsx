@@ -35,6 +35,7 @@ import {
 import InterviewFormModal from "../components/Interviews/InterviewFormModal";
 import { fetchCandidates } from "../features/candidate/candidateSlice";
 import NotFoundPage from "../components/NotFoundPage";
+import dayjs from "dayjs";
 
 const { Title, Text } = Typography;
 
@@ -140,7 +141,10 @@ const InterviewDetail = () => {
         const interview = interviews?.find(
           (i) => i.interviewId === selectedInterview._id
         );
-        return interview?.scheduledDatetime || "N/A";
+        return (
+          dayjs(interview?.scheduledDatetime).format("MMM D, YYYY h:mm A") ||
+          "N/A"
+        );
       },
     },
     {
