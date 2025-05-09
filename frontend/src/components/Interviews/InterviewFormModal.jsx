@@ -114,6 +114,12 @@ const InterviewFormModal = ({ isEditing, initialValues }) => {
                 max: 300,
                 message: "Duration cannot exceed 300 minutes",
               },
+              {
+                validator: (_, value) =>
+                  Number.isInteger(value)
+                    ? Promise.resolve()
+                    : Promise.reject("Duration must be an integer."),
+              },
             ]}
           >
             <InputNumber

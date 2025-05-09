@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useMemo, useState } from "react";
 import {
   Card,
   Descriptions,
@@ -8,29 +8,30 @@ import {
   Badge,
   Popconfirm,
   Flex,
-  Tabs,
   Space,
-  Form,
-  message,
   Table,
   Tag,
+  Input,
+  message,
+  Select,
+  Progress,
 } from "antd";
 import {
   FileTextOutlined,
   TeamOutlined,
   ArrowLeftOutlined,
-  EditOutlined,
+  FilterOutlined,
   DeleteOutlined,
   ClockCircleOutlined,
   LaptopOutlined,
   UserOutlined,
+  SearchOutlined,
 } from "@ant-design/icons";
 import { useParams, useNavigate } from "react-router-dom";
 import { useDispatch, useSelector } from "react-redux";
 import {
   fetchInterviews,
   deleteInterview,
-  updateInterview,
 } from "../features/interview/interviewSlice";
 import InterviewFormModal from "../components/Interviews/InterviewFormModal";
 import { fetchCandidates } from "../features/candidate/candidateSlice";
@@ -48,6 +49,8 @@ const InterviewDetail = () => {
   const candidates = useSelector((state) => state.candidates.data);
   const [selectedInterview, setSelectedInterview] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [searchText, setSearchText] = useState("");
+  const [statusFilter, setStatusFilter] = useState(null);
 
   useEffect(() => {
     const loadData = async () => {
@@ -80,74 +83,33 @@ const InterviewDetail = () => {
     }
   };
 
-  if (loading) {
-    return <Spin fullscreen />;
-  }
+  // Filter candidates by the interview they're scheduled for and search/filter criteria
+  const associatedCandidates = useMemo(() => {
+    return candidates
+      .filter((candidate) =>
+        candidate.interviews?.some(
+          (interview) => interview.interviewId === selectedInterview?._id
+        )
+      )
+      .filter((candidate) => {
+        // Search filter
+        const matchesSearch =
+          searchText === "" ||
+          candidate.fullName.toLowerCase().includes(searchText.toLowerCase()) ||
+          candidate.email.toLowerCase().includes(searchText.toLowerCase());
 
-  if (!selectedInterview) {
-    return <NotFoundPage />;
-  }
+        // Status filter
+        const interview = candidate.interviews?.find(
+          (i) => i.interviewId === selectedInterview?._id
+        );
+        const matchesStatus =
+          statusFilter === null ||
+          statusFilter === undefined ||
+          interview?.status === statusFilter;
 
-  // Filter candidates by the interview they're scheduled for
-  const associatedCandidates = candidates.filter((candidate) =>
-    candidate.interviews?.some(
-      (interview) => interview.interviewId === selectedInterview._id
-    )
-  );
-
-  const candidateColumns = [
-    {
-      title: "Full Name",
-      dataIndex: "fullName",
-      key: "fullName",
-    },
-    {
-      title: "Email",
-      dataIndex: "email",
-      key: "email",
-    },
-    {
-      title: "Interview Status",
-      dataIndex: "interviews",
-      key: "interviewStatus",
-      render: (interviews) => {
-        const interview = interviews?.find(
-          (i) => i.interviewId === selectedInterview._id
-        );
-        return (
-          <Tag color={getInterviewStatusColor(interview?.status)}>
-            {interview?.status || "Not Scheduled"}
-          </Tag>
-        );
-      },
-    },
-    {
-      title: "Scheduled Date",
-      dataIndex: "interviews",
-      key: "scheduledDate",
-      render: (interviews) => {
-        const interview = interviews?.find(
-          (i) => i.interviewId === selectedInterview._id
-        );
-        return (
-          dayjs(interview?.scheduledDatetime).format("MMM D, YYYY h:mm A") ||
-          "N/A"
-        );
-      },
-    },
-    {
-      title: "Actions",
-      key: "actions",
-      render: (_, record) => (
-        <Button
-          type="link"
-          onClick={() => navigate(`/candidates/${record._id}`)}
-        >
-          View Profile
-        </Button>
-      ),
-    },
-  ];
+        return matchesSearch && matchesStatus;
+      });
+  }, [candidates, selectedInterview, searchText, statusFilter]);
 
   const getInterviewStatusColor = (status) => {
     switch (status) {
@@ -167,6 +129,109 @@ const InterviewDetail = () => {
         return "gray";
     }
   };
+
+  const candidateColumns = [
+    {
+      title: "Full Name",
+      dataIndex: "fullName",
+      key: "fullName",
+      sorter: (a, b) => a.fullName.localeCompare(b.fullName),
+    },
+
+    {
+      title: "Interview Status",
+      dataIndex: "interviews",
+      key: "interviewStatus",
+      render: (interviews) => {
+        const interview = interviews?.find(
+          (i) => i.interviewId === selectedInterview?._id
+        );
+        return (
+          <Tag color={getInterviewStatusColor(interview?.status)}>
+            {interview?.status || "Not Scheduled"}
+          </Tag>
+        );
+      },
+      filters: [
+        { text: "Scheduled", value: "Scheduled" },
+        { text: "In Progress", value: "In Progress" },
+        { text: "Completed", value: "Completed" },
+        { text: "Evaluated", value: "Evaluated" },
+        { text: "Rescheduled", value: "Rescheduled" },
+        { text: "Cancelled", value: "Cancelled" },
+      ],
+      onFilter: (value, record) => {
+        const interview = record.interviews?.find(
+          (i) => i.interviewId === selectedInterview?._id
+        );
+        return interview?.status === value;
+      },
+    },
+    {
+      title: "Score",
+      dataIndex: "interviews",
+      key: "score",
+      render: (interviews) => {
+        const interview = interviews?.find(
+          (a) => String(a.interviewId) === selectedInterview?._id
+        );
+        return interview?.score ? (
+          <Progress
+            percent={Math.round((interview.score / interview.maxScore) * 100)}
+            size="small"
+            format={() => `${interview.score}/${interview.maxScore}`}
+          />
+        ) : (
+          "N/A"
+        );
+      },
+    },
+    {
+      title: "Scheduled Date",
+      dataIndex: "interviews",
+      key: "scheduledDate",
+      render: (interviews) => {
+        const interview = interviews?.find(
+          (i) => i.interviewId === selectedInterview?._id
+        );
+        return interview?.scheduledDatetime
+          ? dayjs(interview.scheduledDatetime).format("MMM D, YYYY h:mm A")
+          : "N/A";
+      },
+      sorter: (a, b) => {
+        const interviewA = a.interviews?.find(
+          (i) => i.interviewId === selectedInterview?._id
+        );
+        const interviewB = b.interviews?.find(
+          (i) => i.interviewId === selectedInterview?._id
+        );
+        return (
+          new Date(interviewA?.scheduledDatetime || 0) -
+          new Date(interviewB?.scheduledDatetime || 0)
+        );
+      },
+    },
+    {
+      title: "Actions",
+      key: "actions",
+      render: (_, record) => (
+        <Button
+          type="link"
+          onClick={() => navigate(`/candidates/${record._id}`)}
+        >
+          View Profile
+        </Button>
+      ),
+    },
+  ];
+
+  if (loading) {
+    return <Spin fullscreen />;
+  }
+
+  if (!selectedInterview) {
+    return <NotFoundPage />;
+  }
 
   return (
     <div style={{ maxWidth: 1200, margin: "0 auto" }}>
@@ -250,23 +315,56 @@ const InterviewDetail = () => {
             />
           </Space>
         }
-      >
-        <Tabs defaultActiveKey="1">
-          <Tabs.TabPane tab="Candidates" key="1">
-            <Table
-              columns={candidateColumns}
-              dataSource={associatedCandidates}
-              rowKey={(record) => record._id}
-              pagination={{
-                defaultPageSize: 10,
-                showSizeChanger: true,
-                pageSizeOptions: ["5", "10", "20"],
-                showTotal: (total, range) =>
-                  `${range[0]}-${range[1]} of ${total} candidates`,
-              }}
+        extra={
+          <Space gap="16px">
+            <Input
+              placeholder="Search candidates"
+              prefix={<SearchOutlined />}
+              value={searchText}
+              onChange={(e) => setSearchText(e.target.value)}
+              allowClear
+              enterButton
+              style={{ width: 250 }}
             />
-          </Tabs.TabPane>
-        </Tabs>
+            <Select
+              placeholder="Filter by status"
+              value={statusFilter}
+              onChange={setStatusFilter}
+              allowClear
+              suffixIcon={<FilterOutlined />}
+              style={{ width: 250 }}
+            >
+              <Select.Option value="Scheduled">Scheduled</Select.Option>
+              <Select.Option value="In Progress">In Progress</Select.Option>
+              <Select.Option value="Completed">Completed</Select.Option>
+              <Select.Option value="Evaluated">Evaluated</Select.Option>
+              <Select.Option value="Rescheduled">Rescheduled</Select.Option>
+              <Select.Option value="Cancelled">Cancelled</Select.Option>
+            </Select>
+          </Space>
+        }
+      >
+        <Space direction="vertical" style={{ width: "100%" }}>
+          <Table
+            columns={candidateColumns}
+            dataSource={associatedCandidates}
+            rowKey={(record) => record._id}
+            pagination={{
+              defaultPageSize: 10,
+              showSizeChanger: true,
+              pageSizeOptions: ["5", "10", "20"],
+              showTotal: (total, range) =>
+                `${range[0]}-${range[1]} of ${total} candidates`,
+            }}
+            scroll={{ x: true }}
+            locale={{
+              emptyText:
+                searchText || statusFilter
+                  ? "No candidates match your filters"
+                  : "No candidates associated with this interview",
+            }}
+          />
+        </Space>
       </Card>
     </div>
   );

@@ -68,7 +68,7 @@ const ScheduleInterviewModal = ({ candidate }) => {
       dispatch(fetchInterviews());
       dispatch(fetchUsers());
     }
-  }, [visible, form, dispatch]);
+  }, [form, dispatch]);
 
   const handleSubmit = async (values) => {
     const candidateId = candidate?._id || selectedCandidateId;

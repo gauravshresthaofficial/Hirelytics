@@ -83,6 +83,7 @@ export const addAssessmentToCandidate = createAsyncThunk(
         `/candidates/${candidateId}/assessments`,
         assessmentData
       );
+      console.log(response.data.data);
       return response.data.data;
     } catch (error) {
       console.log(error);
@@ -100,7 +101,8 @@ export const completeCandidateAssessment = createAsyncThunk(
       const response = await api.put(
         `/candidates/${candidateId}/assessments/${assessmentId}/complete`
       );
-      return response.data;
+      console.log(response.data.data);
+      return response.data.data;
     } catch (error) {
       return rejectWithValue(
         error.response?.data?.error || "Failed to update a candidate assessment"
@@ -120,7 +122,7 @@ export const updateCandidateAssessment = createAsyncThunk(
         `/candidates/${candidateId}/assessments/${assessmentId}`,
         assessmentData
       );
-      response.data.data;
+      console.log(response.data.data);
       return response.data.data;
     } catch (error) {
       return rejectWithValue(
@@ -138,6 +140,7 @@ export const addInterviewToCandidate = createAsyncThunk(
         `/candidates/${candidateId}/interviews`,
         interviewData
       );
+      console.log(response.data.data);
       return response.data.data;
     } catch (error) {
       return rejectWithValue(
@@ -154,7 +157,8 @@ export const completeCandidateInterview = createAsyncThunk(
       const response = await api.put(
         `/candidates/${candidateId}/interviews/${interviewId}/complete`
       );
-      return response.data;
+      console.log(response.data.data);
+      return response.data.data;
     } catch (error) {
       return rejectWithValue(
         error.response?.data?.error || "Failed to update a candidate interview"
@@ -329,19 +333,22 @@ const candidateSlice = createSlice({
         state.error = action.payload;
       })
       .addCase(addAssessmentToCandidate.fulfilled, (state, action) => {
-        const candidateIndex = state.data.findIndex(
+        const index = state.data.findIndex(
           (candidate) => candidate._id === action.payload._id
         );
-        if (candidateIndex !== -1) {
-          state.data[candidateIndex] = action.payload;
+        action.payload;
+        if (index !== -1) {
+          state.data[index] = action.payload;
         }
       })
       .addCase(updateCandidateAssessment.fulfilled, (state, action) => {
         const candidateIndex = state.data.findIndex(
           (candidate) => candidate._id === action.payload._id
         );
+        console.log(candidateIndex);
+        console.log(action.payload);
         if (candidateIndex !== -1) {
-          state.data[candidateIndex] = action.payload.assessment;
+          state.data[candidateIndex] = action.payload;
         }
       })
       .addCase(addInterviewToCandidate.fulfilled, (state, action) => {
@@ -357,7 +364,7 @@ const candidateSlice = createSlice({
           (candidate) => candidate._id === action.payload._id
         );
         if (candidateIndex !== -1) {
-          state.data[candidateIndex] = action.payload.interview;
+          state.data[candidateIndex] = action.payload;
         }
       })
       .addCase(updateCandidateStatus.fulfilled, (state, action) => {
@@ -407,30 +414,11 @@ const candidateSlice = createSlice({
         state.completeAssessmentSuccess = false;
       })
       .addCase(completeCandidateAssessment.fulfilled, (state, action) => {
-        state.completingAssessment = false;
-        state.completeAssessmentSuccess = true;
-
-        const { candidateId, assessmentId } = action.meta.arg;
         const candidateIndex = state.data.findIndex(
-          (c) => c._id === candidateId
+          (candidate) => candidate._id === action.payload._id
         );
-
         if (candidateIndex !== -1) {
-          const assessmentIndex = state.data[
-            candidateIndex
-          ].assessments.findIndex((a) => a.assessmentId === assessmentId);
-
-          if (assessmentIndex !== -1) {
-            state.data[candidateIndex].assessments[assessmentIndex] = {
-              ...state.data[candidateIndex].assessments[assessmentIndex],
-              status: "Completed",
-              completionDate: new Date().toISOString(),
-            };
-
-            state.data[candidateIndex].currentStatus = determineOverallStatus(
-              state.data[candidateIndex]
-            );
-          }
+          state.data[candidateIndex] = action.payload;
         }
       })
       .addCase(completeCandidateAssessment.rejected, (state, action) => {
@@ -444,30 +432,11 @@ const candidateSlice = createSlice({
         state.completeInterviewSuccess = false;
       })
       .addCase(completeCandidateInterview.fulfilled, (state, action) => {
-        state.completingInterview = false;
-        state.completeInterviewSuccess = true;
-
-        const { candidateId, interviewId } = action.meta.arg;
         const candidateIndex = state.data.findIndex(
-          (c) => c._id === candidateId
+          (candidate) => candidate._id === action.payload._id
         );
-
         if (candidateIndex !== -1) {
-          const interviewIndex = state.data[
-            candidateIndex
-          ].interviews.findIndex((i) => i.interviewId === interviewId);
-
-          if (interviewIndex !== -1) {
-            state.data[candidateIndex].interviews[interviewIndex] = {
-              ...state.data[candidateIndex].interviews[interviewIndex],
-              status: "Completed",
-              completionDate: new Date().toISOString(),
-            };
-
-            state.data[candidateIndex].currentStatus = determineOverallStatus(
-              state.data[candidateIndex]
-            );
-          }
+          state.data[candidateIndex] = action.payload;
         }
       })
       .addCase(completeCandidateInterview.rejected, (state, action) => {

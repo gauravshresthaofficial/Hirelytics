@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, useMemo } from "react";
 import {
   Card,
   Descriptions,
@@ -8,33 +8,47 @@ import {
   Badge,
   Popconfirm,
   Flex,
-  Tabs,
   Space,
-  Form,
-  message,
   Table,
   Tag,
+  Input,
+  Select,
 } from "antd";
 import {
   FileTextOutlined,
   TeamOutlined,
   ArrowLeftOutlined,
-  EditOutlined,
   DeleteOutlined,
-  DollarCircleOutlined,
-  TagOutlined,
+  SearchOutlined,
+  FilterOutlined,
 } from "@ant-design/icons";
 import { useParams, useNavigate } from "react-router-dom";
 import { useDispatch, useSelector } from "react-redux";
 import {
   fetchPositions,
   deletePosition,
-  updatePosition,
 } from "../features/position/positionSlice";
 import PositionFormModal from "../components/Positions/PositionModalForm";
 import { fetchCandidates } from "../features/candidate/candidateSlice";
 
 const { Title, Text } = Typography;
+const { Search } = Input;
+
+const statusOptions = [
+  { value: "Assessment Scheduled", label: "Assessment Scheduled" },
+  { value: "Assessment In Progress", label: "Assessment In Progress" },
+  { value: "Assessment Completed", label: "Assessment Completed" },
+  { value: "Assessment Evaluated", label: "Assessment Evaluated" },
+  { value: "Interview Scheduled", label: "Interview Scheduled" },
+  { value: "Interview In Progress", label: "Interview In Progress" },
+  { value: "Interview Completed", label: "Interview Completed" },
+  { value: "Interview Evaluated", label: "Interview Evaluated" },
+  { value: "Offer Extended", label: "Offer Extended" },
+  { value: "Offer Accepted", label: "Offer Accepted" },
+  { value: "Hired", label: "Hired" },
+  { value: "Rejected", label: "Rejected" },
+  { value: "Withdrawn", label: "Withdrawn" },
+];
 
 const PositionDetail = () => {
   const { id } = useParams();
@@ -45,6 +59,8 @@ const PositionDetail = () => {
   const candidates = useSelector((state) => state.candidates.data);
   const [selectedPosition, setSelectedPosition] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [searchText, setSearchText] = useState("");
+  const [statusFilter, setStatusFilter] = useState(null);
 
   useEffect(() => {
     const loadData = async () => {
@@ -77,66 +93,6 @@ const PositionDetail = () => {
     }
   };
 
-  if (loading) {
-    return <Spin fullscreen />;
-  }
-
-  if (!selectedPosition) {
-    return (
-      <div style={{ textAlign: "center", padding: "2rem" }}>
-        <Title level={4}>Position not found</Title>
-        <Button type="primary" onClick={() => navigate(-1)}>
-          Go Back
-        </Button>
-      </div>
-    );
-  }
-
-  // Filter candidates by the applied position
-  const associatedCandidates = candidates.filter(
-    (candidate) => candidate.appliedPosition === selectedPosition.positionName
-  );
-
-  const candidateColumns = [
-    {
-      title: "Full Name",
-      dataIndex: "fullName",
-      key: "fullName",
-    },
-    {
-      title: "Email",
-      dataIndex: "email",
-      key: "email",
-    },
-    {
-      title: "Phone Number",
-      dataIndex: "phoneNumber",
-      key: "phoneNumber",
-    },
-    {
-      title: "Status",
-      dataIndex: "currentStatus",
-      key: "currentStatus",
-      render: (currentStatus) => (
-        <Tag color={getStatusTagColor(currentStatus)}>
-          {currentStatus || "Not Started"}
-        </Tag>
-      ),
-    },
-    {
-      title: "Actions",
-      key: "actions",
-      render: (_, record) => (
-        <Button
-          type="link"
-          onClick={() => navigate(`/candidates/${record._id}`)}
-        >
-          View Profile
-        </Button>
-      ),
-    },
-  ];
-
   const getStatusTagColor = (status) => {
     switch (status) {
       case "Assessment Scheduled":
@@ -166,9 +122,98 @@ const PositionDetail = () => {
       case "Withdrawn":
         return "gray";
       default:
-        return "orange"; // Default color for unknown statuses
+        return "orange";
     }
   };
+
+  const filteredCandidates = useMemo(() => {
+    let result = candidates.filter(
+      (candidate) =>
+        candidate.appliedPosition === selectedPosition?.positionName
+    );
+
+    if (searchText) {
+      const lowerSearch = searchText.toLowerCase();
+      result = result.filter(
+        (candidate) =>
+          candidate.fullName?.toLowerCase().includes(lowerSearch) ||
+          candidate.email?.toLowerCase().includes(lowerSearch) ||
+          candidate.phoneNumber?.toLowerCase().includes(lowerSearch)
+      );
+    }
+
+    if (statusFilter) {
+      result = result.filter(
+        (candidate) => candidate.currentStatus === statusFilter
+      );
+    }
+
+    return result;
+  }, [candidates, selectedPosition, searchText, statusFilter]);
+
+  const candidateColumns = [
+    {
+      title: "Full Name",
+      dataIndex: "fullName",
+      key: "fullName",
+      sorter: (a, b) => a.fullName?.localeCompare(b.fullName),
+    },
+    {
+      title: "Email",
+      dataIndex: "email",
+      key: "email",
+      sorter: (a, b) => a.email?.localeCompare(b.email),
+    },
+    {
+      title: "Phone Number",
+      dataIndex: "phoneNumber",
+      key: "phoneNumber",
+      sorter: (a, b) => a.phoneNumber?.localeCompare(b.phoneNumber),
+    },
+    {
+      title: "Status",
+      dataIndex: "currentStatus",
+      key: "currentStatus",
+      render: (currentStatus) => (
+        <Tag color={getStatusTagColor(currentStatus)}>
+          {currentStatus || "Not Started"}
+        </Tag>
+      ),
+      filters: statusOptions.map((opt) => ({
+        text: opt.label,
+        value: opt.value,
+      })),
+      filteredValue: statusFilter ? [statusFilter] : [],
+      onFilter: (value, record) => record.currentStatus === value,
+    },
+    {
+      title: "Actions",
+      key: "actions",
+      render: (_, record) => (
+        <Button
+          type="link"
+          onClick={() => navigate(`/candidates/${record._id}`)}
+        >
+          View Profile
+        </Button>
+      ),
+    },
+  ];
+
+  if (loading) {
+    return <Spin fullscreen />;
+  }
+
+  if (!selectedPosition) {
+    return (
+      <div style={{ textAlign: "center", padding: "2rem" }}>
+        <Title level={4}>Position not found</Title>
+        <Button type="primary" onClick={() => navigate(-1)}>
+          Go Back
+        </Button>
+      </div>
+    );
+  }
 
   return (
     <div style={{ maxWidth: 1200, margin: "0 auto" }}>
@@ -215,49 +260,64 @@ const PositionDetail = () => {
       >
         <Descriptions column={{ xs: 1, sm: 2, md: 4 }} layout="vertical">
           <Descriptions.Item label={<Text strong>Department</Text>}>
-            <Space>
-              <TagOutlined /> {selectedPosition.department || "N/A"}
-            </Space>
+            <Tag>{selectedPosition.department || "N/A"}</Tag>
           </Descriptions.Item>
           <Descriptions.Item label={<Text strong>Salary Range</Text>}>
-            <Space>
-              NPR{selectedPosition.salaryRange?.min} - NPR
-              {selectedPosition.salaryRange?.max}
-            </Space>
+            NPR {selectedPosition.salaryRange?.min} - NPR{" "}
+            {selectedPosition.salaryRange?.max}
           </Descriptions.Item>
         </Descriptions>
       </Card>
 
       <Card
         title={
-          <Space>
-            <TeamOutlined />
-            <Title level={4} style={{ margin: 0 }}>
-              Associated Candidates
-            </Title>
-            <Badge
-              count={associatedCandidates.length}
-              style={{ backgroundColor: "#1890ff" }}
+          <Flex justify="space-between" align="center">
+            <Space>
+              <TeamOutlined />
+              <Title level={4} style={{ margin: 0 }}>
+                Associated Candidates
+              </Title>
+              <Badge
+                count={filteredCandidates.length}
+                style={{ backgroundColor: "#1890ff" }}
+              />
+            </Space>
+          </Flex>
+        }
+        extra={
+          <Flex gap={16}>
+            <Input
+              placeholder="Search candidates..."
+              prefix={<SearchOutlined />}
+              allowClear
+              value={searchText}
+              onChange={(e) => setSearchText(e.target.value)}
+              style={{ width: 250 }}
             />
-          </Space>
+            <Select
+              allowClear
+              placeholder="Filter by status"
+              options={statusOptions}
+              value={statusFilter}
+              onChange={setStatusFilter}
+              suffixIcon={<FilterOutlined />}
+              style={{ width: 250 }}
+            />
+          </Flex>
         }
       >
-        <Tabs defaultActiveKey="1">
-          <Tabs.TabPane tab="Candidates" key="1">
-            <Table
-              columns={candidateColumns}
-              dataSource={associatedCandidates}
-              rowKey={(record) => record._id.$oid}
-              pagination={{
-                defaultPageSize: 10,
-                showSizeChanger: true,
-                pageSizeOptions: ["5", "10", "20"],
-                showTotal: (total, range) =>
-                  `${range[0]}-${range[1]} of ${total} positions`,
-              }}
-            />
-          </Tabs.TabPane>
-        </Tabs>
+        <Table
+          columns={candidateColumns}
+          dataSource={filteredCandidates}
+          rowKey={(record) => record._id}
+          pagination={{
+            defaultPageSize: 10,
+            showSizeChanger: true,
+            pageSizeOptions: ["5", "10", "20"],
+            showTotal: (total, range) =>
+              `${range[0]}-${range[1]} of ${total} candidates`,
+          }}
+        />
       </Card>
     </div>
   );

@@ -181,10 +181,12 @@ const AppLayout = ({ children }) => {
         <Content
           style={{
             padding: "16px",
+            paddingRight: 24,
+            paddingBottom: 0,
             marginBottom: "24px",
-            display: "flex",
+            // display: "flex",
             background: "#f5f5f5",
-            overflowY: "auto",
+            overflowY: "scroll",
           }}
         >
           {children}

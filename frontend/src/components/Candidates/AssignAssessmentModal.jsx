@@ -8,6 +8,7 @@ import {
 } from "../../features/candidate/candidateSlice";
 import { fetchAssessments } from "../../features/assessment/assessmentSlice";
 import { fetchUsers } from "../../features/user/userSlice";
+import EmailTemplateSelector from "../common/EmailTemplate";
 
 const { Option } = Select;
 const NEPAL_TIMEZONE = "Asia/Kathmandu";
@@ -37,7 +38,7 @@ const AssignAssessmentModal = ({ candidate }) => {
       dispatch(fetchAssessments());
       dispatch(fetchUsers());
     }
-  }, [visible, form, dispatch]);
+  }, [form, dispatch]);
 
   const getNextThursdayAtTwo = () => {
     const now = moment().tz(NEPAL_TIMEZONE);
@@ -70,9 +71,12 @@ const AssignAssessmentModal = ({ candidate }) => {
       form.resetFields();
       setSelectedCandidateId(null);
     } catch (error) {
+      console.log(error);
       message.error(error || "Failed to assign assessment.");
     }
   };
+
+  console.log("hey");
 
   return (
     <>
@@ -175,13 +179,16 @@ const AssignAssessmentModal = ({ candidate }) => {
             rules={[{ required: true, message: "Please select an evaluator!" }]}
           >
             <Select placeholder="Select an evaluator">
-              {users.map((u) => (
-                <Option key={u._id} value={u._id}>
-                  {u.fullName}
-                </Option>
-              ))}
+              {users
+                .filter((u) => u.role.toLowerCase() == "evaluator")
+                .map((u) => (
+                  <Option key={u._id} value={u._id}>
+                    {u.fullName}
+                  </Option>
+                ))}
             </Select>
           </Form.Item>
+          <EmailTemplateSelector />
         </Form>
       </Modal>
     </>

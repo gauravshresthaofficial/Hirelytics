@@ -9,14 +9,17 @@ import {
   InputNumber,
   message,
   Tag,
+  Select,
 } from "antd";
 import {
   hireCandidate,
   rejectCandidate,
 } from "../../features/candidate/candidateSlice";
 import moment from "moment";
+import EmailTemplateSelector from "../common/EmailTemplate";
 
 const { TextArea } = Input;
+const { Option } = Select;
 
 const CandidateHireRejectModal = ({ candidate, positionId }) => {
   const candidateId = candidate._id;
@@ -95,6 +98,9 @@ const CandidateHireRejectModal = ({ candidate, positionId }) => {
           </Button>
         )}
       {candidate.currentStatus === "Hired" && <Tag color="success">Hired</Tag>}
+      {candidate.currentStatus === "Rejected" && (
+        <Tag color="error">Rejected</Tag>
+      )}
 
       {/* Hire Modal */}
       <Modal
@@ -110,39 +116,46 @@ const CandidateHireRejectModal = ({ candidate, positionId }) => {
         centered
       >
         <Form form={hireForm} layout="vertical">
-          <Form form={hireForm} layout="vertical">
-            <Form.Item
-              name="agreedSalary"
-              label="Agreed Salary"
-              rules={[
-                {
-                  required: true,
-                  message: "Please input the salary",
+          <Form.Item
+            name="agreedSalary"
+            label="Agreed Salary"
+            rules={[
+              {
+                required: true,
+                message: "Please input the salary",
+              },
+              {
+                validator: (_, value) => {
+                  if (value === undefined || value === null || value === "") {
+                    return Promise.reject("Please input the salary");
+                  }
+
+                  const num = Number(value);
+                  if (isNaN(num)) {
+                    return Promise.reject("Salary must be a valid number");
+                  }
+
+                  if (num <= 0) {
+                    return Promise.reject("Salary must be greater than 0");
+                  }
+
+                  return Promise.resolve();
                 },
-                {
-                  type: "number",
-                  message: "Salary must be a valid number",
-                },
-                {
-                  validator: (_, value) =>
-                    value > 0
-                      ? Promise.resolve()
-                      : Promise.reject("Salary must be greater than 0"),
-                },
-              ]}
-            >
-              <InputNumber
-                style={{ width: "100%" }}
-                min={1}
-                precision={2}
-                step={1000}
-                formatter={(value) =>
-                  `NRP ${value}`.replace(/\B(?=(\d{3})+(?!\d))/g, ",")
-                }
-                parser={(value) => value.replace(/\s?NRP\s?|,/g, "")}
-              />
-            </Form.Item>
-          </Form>
+              },
+            ]}
+          >
+            <InputNumber
+              style={{ width: "100%" }}
+              min={1}
+              precision={2}
+              step={1000}
+              formatter={(value) =>
+                `NRP ${value}`.replace(/\B(?=(\d{3})+(?!\d))/g, ",")
+              }
+              parser={(value) => value.replace(/\s?NRP\s?|,/g, "")}
+            />
+          </Form.Item>
+          import moment from 'moment';
           <Form.Item
             name="startDate"
             label="Start Date"
@@ -151,23 +164,16 @@ const CandidateHireRejectModal = ({ candidate, positionId }) => {
                 required: true,
                 message: "Please select start date",
               },
-              {
-                validator: (_, value) => {
-                  if (value && moment(value).isSameOrBefore(moment(), "day")) {
-                    return Promise.reject("Start date must be in the future");
-                  }
-                  return Promise.resolve();
-                },
-              },
             ]}
           >
             <DatePicker
               style={{ width: "100%" }}
               disabledDate={(current) =>
-                current && current.isSameOrBefore(moment().endOf("day"))
+                current && current <= moment().endOf("day")
               }
             />
           </Form.Item>
+          <EmailTemplateSelector />
         </Form>
       </Modal>
 
@@ -197,6 +203,7 @@ const CandidateHireRejectModal = ({ candidate, positionId }) => {
               placeholder="Explain why the candidate is being rejected"
             />
           </Form.Item>
+          <EmailTemplateSelector />
         </Form>
       </Modal>
     </>

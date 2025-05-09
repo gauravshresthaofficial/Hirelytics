@@ -11,9 +11,11 @@ import {
 import React, { useState } from "react";
 import { useDispatch } from "react-redux";
 import { makeOfferToCandidate } from "../../features/candidate/candidateSlice";
+import EmailTemplateSelector from "../common/EmailTemplate";
 
 const { TextArea } = Input;
 const { Text } = Typography;
+const { Option } = Select;
 
 const CandidateOffer = ({ candidate, positions }) => {
   const [isOfferModalOpen, setIsOfferModalOpen] = useState(false);
@@ -91,14 +93,25 @@ const CandidateOffer = ({ candidate, positions }) => {
                 message: "Please input the salary",
               },
               {
-                type: "number",
-                message: "Salary must be a valid number",
-              },
-              {
-                validator: (_, value) =>
-                  value > 0
-                    ? Promise.resolve()
-                    : Promise.reject("Salary must be greater than 0"),
+                validator: (_, value) => {
+                  if (value === undefined || value === null || value === "") {
+                    return Promise.reject("Please input the salary");
+                  }
+
+                  if (typeof value !== "number" || isNaN(value)) {
+                    return Promise.reject("Salary must be a valid number");
+                  }
+
+                  if (!Number.isInteger(value)) {
+                    return Promise.reject("Salary must be an integer");
+                  }
+
+                  if (value <= 0) {
+                    return Promise.reject("Salary must be greater than 0");
+                  }
+
+                  return Promise.resolve();
+                },
               },
             ]}
           >
@@ -111,6 +124,7 @@ const CandidateOffer = ({ candidate, positions }) => {
               parser={(value) => value.replace(/\s?NRP\s?|,/g, "")}
             />
           </Form.Item>
+
           <Form.Item
             name="benefits"
             label="Benefits"
@@ -129,6 +143,8 @@ const CandidateOffer = ({ candidate, positions }) => {
               maxLength={500}
             />
           </Form.Item>
+
+          <EmailTemplateSelector />
         </Form>
       </Modal>
     </>

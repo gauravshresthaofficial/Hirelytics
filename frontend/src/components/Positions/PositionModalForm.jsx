@@ -212,6 +212,12 @@ const PositionFormModal = ({ isEditing, initialValues }) => {
                       min: 0,
                       message: "Minimum salary must be at least 0",
                     },
+                    {
+                      validator: (_, value) =>
+                        Number.isInteger(value)
+                          ? Promise.resolve()
+                          : Promise.reject("Salary must be an integer."),
+                    },
                   ]}
                 >
                   <InputNumber
@@ -230,19 +236,27 @@ const PositionFormModal = ({ isEditing, initialValues }) => {
                     ({ getFieldValue }) => ({
                       validator(_, value) {
                         const min = getFieldValue(["salaryRange", "min"]);
-                        if (value >= min) {
-                          return Promise.resolve();
+
+                        if (value === undefined || value === null) {
+                          return Promise.reject("Maximum salary is required");
                         }
-                        return Promise.reject(
-                          new Error(
+
+                        if (!Number.isInteger(value)) {
+                          return Promise.reject("Salary must be an integer.");
+                        }
+
+                        if (value < min) {
+                          return Promise.reject(
                             "Maximum salary must be greater than or equal to minimum salary"
-                          )
-                        );
+                          );
+                        }
+
+                        return Promise.resolve();
                       },
                     }),
                   ]}
                 >
-                  <InputNumber
+                  <Input
                     style={{ width: "100%" }}
                     placeholder="Max"
                     addonBefore="Max"

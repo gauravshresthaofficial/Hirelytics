@@ -6,8 +6,6 @@ import InterviewCalendar from "../components/Interviews/CalendaComponent";
 import InterviewTable from "../components/Interviews/InterviewTable";
 import {
   fetchInterviews,
-  createInterview,
-  updateInterview,
   deleteInterview,
 } from "../features/interview/interviewSlice";
 
@@ -21,25 +19,7 @@ const InterviewPage = () => {
     dispatch(fetchInterviews());
   }, [dispatch]);
 
-  const handleDelete = async (id) => {
-    try {
-      await dispatch(deleteInterview(id)).unwrap();
-      message.success("Interview deleted successfully!");
-    } catch (err) {
-      message.error(err || "Failed to delete interview.");
-    }
-  };
-
-  return (
-    <Card style={{ overflow: "auto", width: "100%" }}>
-      <InterviewTable
-        interviews={interviews}
-        // onCreate={handleCreate}
-        // onUpdate={handleUpdate}
-        // onDelete={handleDelete}
-      />
-    </Card>
-  );
+  return <InterviewTable interviews={interviews} />;
 };
 
 export default InterviewPage;

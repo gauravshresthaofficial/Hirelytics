@@ -26,7 +26,7 @@ import {
   ArrowLeftOutlined,
   StarOutlined,
   ClockCircleOutlined,
-  EditOutlined,
+  LaptopOutlined,
   DeleteOutlined,
 } from "@ant-design/icons";
 import AssessmentFormModal from "../components/Assessments/AssessmentFormModal";
@@ -150,7 +150,14 @@ const AssessmentDetail = () => {
             <Text>{selectedAssessment.description || "N/A"}</Text>
           </Descriptions.Item>
           <Descriptions.Item label={<Text strong>Mode</Text>}>
-            <Text>{selectedAssessment.mode}</Text>
+            <Space>
+              {selectedAssessment.mode === "Online" ? (
+                <LaptopOutlined />
+              ) : (
+                <UserOutlined />
+              )}
+              <Text>{selectedAssessment.mode}</Text>
+            </Space>
           </Descriptions.Item>
           <Descriptions.Item label={<Text strong>Max Score</Text>}>
             <Space>

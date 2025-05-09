@@ -4,6 +4,7 @@ import ProtectedRoute from "./ProtectedRoute";
 import PublicRoute from "./PublicRoute";
 import Loading from "../components/Loading"; // Assuming you have a Loading component
 import NotFoundPage from "../components/NotFoundPage";
+import Test from "../pages/test";
 
 // Lazy load the pages
 const Login = lazy(() => import("../pages/Login"));
@@ -24,6 +25,7 @@ const AppRoutes = () => {
     <BrowserRouter>
       <Suspense fallback={<Loading />}>
         <Routes>
+          <Route path="/test" element={<Test />} />
           <Route
             path="/dashboard"
             element={

@@ -11,7 +11,7 @@ import {
   Row,
   Col,
 } from "antd";
-import { UserOutlined } from "@ant-design/icons";
+import { FilterOutlined } from "@ant-design/icons";
 import dayjs from "dayjs";
 
 const { Option } = Select;
@@ -37,7 +37,10 @@ const AssessmentCandidatesTable = ({
       );
       const status = assessment?.status || "Cancelled";
 
-      const statusMatch = statusFilter === null || status === statusFilter;
+      const statusMatch =
+        statusFilter === null ||
+        statusFilter === undefined ||
+        status === statusFilter;
 
       return nameMatch && statusMatch;
     });
@@ -48,11 +51,25 @@ const AssessmentCandidatesTable = ({
       title: "Candidate",
       dataIndex: "fullName",
       key: "fullName",
+      sorter: (a, b) => a.fullName.localeCompare(b.fullName),
     },
     {
       title: "Status",
       dataIndex: "assessments",
       key: "status",
+      filters: [
+        { text: "Completed", value: "Completed" },
+        { text: "Scheduled", value: "Scheduled" },
+        { text: "Evaluated", value: "Evaluated" },
+        { text: "In Progress", value: "In Progress" },
+        { text: "Cancelled", value: "Cancelled" },
+      ],
+      onFilter: (value, record) => {
+        const assessment = record.assessments?.find(
+          (a) => String(a.assessmentId) === assessmentId
+        );
+        return assessment?.status === value;
+      },
       render: (assessments) => {
         const assessment = assessments?.find(
           (a) => String(a.assessmentId) === assessmentId
@@ -79,6 +96,15 @@ const AssessmentCandidatesTable = ({
       title: "Score",
       dataIndex: "assessments",
       key: "score",
+      sorter: (a, b) => {
+        const scoreA = a.assessments?.find(
+          (x) => String(x.assessmentId) === assessmentId
+        );
+        const scoreB = b.assessments?.find(
+          (x) => String(x.assessmentId) === assessmentId
+        );
+        return (scoreA?.score || 0) - (scoreB?.score || 0);
+      },
       render: (assessments) => {
         const assessment = assessments?.find(
           (a) => String(a.assessmentId) === assessmentId
@@ -87,7 +113,7 @@ const AssessmentCandidatesTable = ({
           <Progress
             percent={Math.round((assessment.score / assessment.maxScore) * 100)}
             size="small"
-            format={(percent) => `${assessment.score}/${assessment.maxScore}`}
+            format={() => `${assessment.score}/${assessment.maxScore}`}
           />
         ) : (
           "N/A"
@@ -98,6 +124,15 @@ const AssessmentCandidatesTable = ({
       title: "Scheduled Date",
       dataIndex: "assessments",
       key: "date",
+      sorter: (a, b) => {
+        const dateA = a.assessments?.find(
+          (x) => String(x.assessmentId) === assessmentId
+        )?.scheduledDate;
+        const dateB = b.assessments?.find(
+          (x) => String(x.assessmentId) === assessmentId
+        )?.scheduledDate;
+        return new Date(dateA || 0) - new Date(dateB || 0);
+      },
       render: (assessments) => {
         const assessment = assessments?.find(
           (a) => String(a.assessmentId) === assessmentId
@@ -105,6 +140,28 @@ const AssessmentCandidatesTable = ({
         return assessment?.scheduledDate
           ? dayjs(assessment.scheduledDate).format("MMM D, YYYY h:mm A")
           : "Not Scheduled";
+      },
+    },
+    {
+      title: "Evaluated Date",
+      dataIndex: "assessments",
+      key: "evaluatedDate",
+      sorter: (a, b) => {
+        const dateA = a.assessments?.find(
+          (x) => String(x.assessmentId) === assessmentId
+        )?.evaluationDate;
+        const dateB = b.assessments?.find(
+          (x) => String(x.assessmentId) === assessmentId
+        )?.evaluationDate;
+        return new Date(dateA || 0) - new Date(dateB || 0);
+      },
+      render: (assessments) => {
+        const assessment = assessments?.find(
+          (a) => String(a.assessmentId) === assessmentId
+        );
+        return assessment?.evaluationDate
+          ? dayjs(assessment.evaluationDate).format("MMM D, YYYY h:mm A")
+          : "Not Evaluated";
       },
     },
     {
@@ -133,9 +190,10 @@ const AssessmentCandidatesTable = ({
         <Select
           value={statusFilter}
           onChange={(value) => setStatusFilter(value)}
-          style={{ minWidth: "8rem" }}
           allowClear
-          placeholder="All"
+          placeholder="Filter by status"
+          suffixIcon={<FilterOutlined />}
+          style={{ width: 250 }}
         >
           <Option value="Completed">Completed</Option>
           <Option value="Scheduled">Scheduled</Option>

@@ -56,16 +56,30 @@ const EvaluateAssessmentModal = ({
           style={{ flex: 1 }}
           rules={[
             { required: true, message: "Please enter a score" },
-            { type: "number", message: "Invalid number format" },
             {
               validator: (_, value) => {
                 const maxScore = assessment?.maxScore || 100;
+
+                if (value === undefined || value === null || value === "") {
+                  return Promise.reject("Please enter a score");
+                }
+
+                if (typeof value !== "number" || isNaN(value)) {
+                  return Promise.reject("Invalid number format");
+                }
+
+                if (!Number.isInteger(value)) {
+                  return Promise.reject("Score must be an integer.");
+                }
+
                 if (value <= 0) {
                   return Promise.reject("Score must be greater than 0");
                 }
+
                 if (value > maxScore) {
                   return Promise.reject(`Score cannot exceed ${maxScore}`);
                 }
+
                 return Promise.resolve();
               },
             },
@@ -73,7 +87,6 @@ const EvaluateAssessmentModal = ({
         >
           <InputNumber
             min={0}
-            max={assessment?.maxScore}
             style={{ width: "100%" }}
             placeholder={`Enter score (Max: ${assessment?.maxScore || 100})`}
           />

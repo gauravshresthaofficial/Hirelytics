@@ -6,7 +6,7 @@ import {
   Space,
   Tag,
   Popconfirm,
-  message,
+  Card,
   Select,
 } from "antd";
 import {
@@ -94,7 +94,7 @@ const InterviewTable = ({ interviews }) => {
     });
 
   return (
-    <div>
+    <Card width="100%" height="100%">
       <div
         style={{
           marginBottom: "16px",
@@ -141,7 +141,7 @@ const InterviewTable = ({ interviews }) => {
             `${range[0]}-${range[1]} of ${total} interviews`,
         }}
       />
-    </div>
+    </Card>
   );
 };
 

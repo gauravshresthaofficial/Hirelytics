@@ -1,16 +1,12 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, useMemo, useCallback } from "react";
 import { useParams, useNavigate, useLocation } from "react-router-dom";
 import { useDispatch, useSelector } from "react-redux";
 import {
-  addAssessmentToCandidate,
-  addInterviewToCandidate,
   completeCandidateAssessment,
   completeCandidateInterview,
-  fetchCandidateById,
   fetchCandidates,
   updateCandidateAssessment,
   updateCandidateInterview,
-  updateOfferStatus,
 } from "../features/candidate/candidateSlice";
 import {
   Card,
@@ -25,8 +21,16 @@ import {
   Typography,
   Divider,
   Spin,
+  Descriptions,
 } from "antd";
-import { UserOutlined, ArrowLeftOutlined } from "@ant-design/icons";
+import {
+  UserOutlined,
+  ArrowLeftOutlined,
+  MailOutlined,
+  PhoneOutlined,
+  SolutionOutlined,
+  CalendarOutlined,
+} from "@ant-design/icons";
 import CandidateProfile from "../components/Candidates/CandidateProfile";
 import AssignAssessmentModal from "../components/Candidates/AssignAssessmentModal";
 import ScheduleInterviewModal from "../components/Candidates/ScheduleInterviewModal";
@@ -35,9 +39,8 @@ import { fetchInterviews } from "../features/interview/interviewSlice";
 import { fetchUsers } from "../features/user/userSlice";
 import EvaluateAssessmentModal from "../components/Candidates/EvaluateAssessmentModal";
 import EvaluateInterviewModal from "../components/Candidates/EvaluateInterviewModal";
-import CandidiateOffer from "../components/Candidates/CandidateOffer";
-import { fetchPositions } from "../features/position/positionSlice";
 import CandidateOffer from "../components/Candidates/CandidateOffer";
+import { fetchPositions } from "../features/position/positionSlice";
 import CandidateOfferStatusModal from "../components/Candidates/CandidateOfferStatusModal";
 import CandidateHireRejectModal from "../components/Candidates/CandidateHireRejectModal";
 import dayjs from "dayjs";
@@ -51,19 +54,21 @@ const CandidateDetails = () => {
   const navigate = useNavigate();
   const location = useLocation();
   const dispatch = useDispatch();
-  const candidate = useSelector((state) =>
-    state.candidates.data.find((c) => c._id === id)
+
+  // Selectors
+  const { data: candidates, loading } = useSelector(
+    (state) => state.candidates
   );
+  const candidate = candidates.find((c) => c._id === id);
   const assessments = useSelector((state) => state.assessments.data);
   const interviews = useSelector((state) => state.interviews.data);
   const users = useSelector((state) => state.users.data);
   const positions = useSelector((state) => state.positions.data);
-  const { candidates, loading } = useSelector((state) => state.candidates);
-
   const { _id: userId, role: userRole } = useSelector(
     (state) => state.auth.user
   );
-  const eventType = location.state?.type?.toLowerCase();
+
+  // State
   const [activeTabKey, setActiveTabKey] = useState("1");
   const [isEvaluateAssessmentOpen, setIsEvaluateAssessmentOpen] =
     useState(false);
@@ -71,6 +76,57 @@ const CandidateDetails = () => {
   const [selectedAssessment, setSelectedAssessment] = useState(null);
   const [selectedInterview, setSelectedInterview] = useState(null);
 
+  // Derived values
+  const eventType = location.state?.type?.toLowerCase();
+
+  // Memoized values
+  const isFinalStage = useMemo(() => {
+    return ["Offer Accepted", "Offer Rejected", "Hired", "Rejected"].some((s) =>
+      candidate?.currentStatus?.includes(s)
+    );
+  }, [candidate?.currentStatus]);
+
+  const steps = useMemo(
+    () => [
+      {
+        title: "Applied",
+        key: "applied",
+        status: candidate?.currentStatus === "Applied" ? "process" : "finish",
+      },
+      {
+        title: candidate?.currentStatus?.includes("Assessment")
+          ? candidate.currentStatus
+          : "Assessment",
+        key: "assessment",
+        status: getStepStatus(candidate?.assessments, "assessment"),
+      },
+      {
+        title: candidate?.currentStatus?.includes("Interview")
+          ? candidate.currentStatus
+          : "Interview",
+        key: "interview",
+        status: getStepStatus(candidate?.interviews, "interview"),
+      },
+      {
+        title: isFinalStage ? candidate?.currentStatus : "Offer",
+        key: "offer",
+        status: isFinalStage
+          ? candidate?.currentStatus?.includes("Rejected")
+            ? "error"
+            : "finish"
+          : "wait",
+      },
+    ],
+    [candidate, isFinalStage]
+  );
+
+  const currentStep = useMemo(
+    () =>
+      steps.findIndex((step) => candidate?.currentStatus?.includes(step.title)),
+    [steps, candidate]
+  );
+
+  // Effects
   useEffect(() => {
     if (eventType === "assessment") {
       setActiveTabKey("2");
@@ -83,7 +139,6 @@ const CandidateDetails = () => {
 
   useEffect(() => {
     const status = candidate?.currentStatus || "";
-
     if (status.includes("Assessment")) {
       setActiveTabKey("2");
     } else if (status.includes("Interview")) {
@@ -91,40 +146,36 @@ const CandidateDetails = () => {
     } else if (["Offer Extended", "Offer Accepted", "Hired"].includes(status)) {
       setActiveTabKey("4");
     } else {
-      setActiveTabKey("1"); // Default to Basic Info tab
+      setActiveTabKey("1");
     }
   }, [candidate?.currentStatus]);
 
   useEffect(() => {
-    if (!candidates || candidates.length === 0) {
-      dispatch(fetchCandidates());
-    }
-    // if (!candidate) {
-    //   dispatch(fetchCandidateById(id));
-    // }
-    if (!assessments || assessments.length === 0) {
-      dispatch(fetchAssessments());
-    }
-    if (!interviews || interviews.length === 0) {
-      dispatch(fetchInterviews());
-    }
-    if (!users || users.length === 0) {
-      dispatch(fetchUsers());
-    }
-    if (!positions || positions.length === 0) {
-      dispatch(fetchPositions());
-    }
-  }, [dispatch, id, assessments, interviews, users, positions]);
+    const fetchRequiredData = async () => {
+      const promises = [];
+      if (!candidates || candidates.length === 0) {
+        promises.push(dispatch(fetchCandidates()));
+      }
+      if (!assessments || assessments.length === 0) {
+        promises.push(dispatch(fetchAssessments()));
+      }
+      if (!interviews || interviews.length === 0) {
+        promises.push(dispatch(fetchInterviews()));
+      }
+      if (!users || users.length === 0) {
+        promises.push(dispatch(fetchUsers()));
+      }
+      if (!positions || positions.length === 0) {
+        promises.push(dispatch(fetchPositions()));
+      }
+      await Promise.all(promises);
+    };
 
-  if (!candidate && !loading) {
-    return <NotFoundPage />;
-  }
+    fetchRequiredData();
+  }, [dispatch, id]);
 
-  if (loading) {
-    return <Spin fullscreen />;
-  }
-
-  const getStepStatus = (stageData, type) => {
+  // Helper functions
+  function getStepStatus(stageData, type) {
     if (!stageData?.length) return "waiting";
 
     const lastItem = stageData[stageData.length - 1];
@@ -134,107 +185,9 @@ const CandidateDetails = () => {
       return "process";
 
     return "wait";
-  };
+  }
 
-  const isFinalStage = (status) =>
-    ["Offer Accepted", "Offer Rejected", "Hired", "Rejected"].some((s) =>
-      status.includes(s)
-    );
-
-  const steps = [
-    {
-      title: "Applied",
-      key: "applied",
-      status: candidate.currentStatus === "Applied" ? "process" : "finish",
-    },
-    {
-      title: candidate.currentStatus.includes("Assessment")
-        ? candidate.currentStatus
-        : "Assessment",
-      key: "assessment",
-      status: getStepStatus(candidate.assessments, "assessment"),
-    },
-    {
-      title: candidate.currentStatus.includes("Interview")
-        ? candidate.currentStatus
-        : "Interview",
-      key: "interview",
-      status: getStepStatus(candidate.interviews, "interview"),
-    },
-    {
-      title: isFinalStage(candidate.currentStatus)
-        ? candidate.currentStatus
-        : "Offer",
-      key: "offer",
-      status: isFinalStage(candidate.currentStatus)
-        ? candidate.currentStatus.includes("Rejected")
-          ? "error"
-          : "finish"
-        : "wait",
-    },
-  ];
-
-  // Determine the current step
-  const currentStep = steps.findIndex((step) =>
-    candidate.currentStatus.includes(step.title)
-  );
-
-  const handleEvaluationAssessment = async (values) => {
-    try {
-      dispatch(
-        updateCandidateAssessment({
-          candidateId: id,
-          assessmentId: selectedAssessment.assessmentId,
-          assessmentData: values,
-        })
-      ).unwrap();
-      setActiveTabKey("2");
-      setIsEvaluateAssessmentOpen(false);
-      message.success("Assessment Evaluated successfully");
-    } catch (error) {
-      message.error(error || "Failed to evaluate assignment");
-    }
-  };
-
-  const handleEvaluationInterview = async (values) => {
-    try {
-      dispatch(
-        updateCandidateInterview({
-          candidateId: id,
-          interviewId: selectedInterview.interviewId,
-          interviewData: values,
-        })
-      ).unwrap();
-      setActiveTabKey("3");
-      message.success("Interview Evaluated successfully");
-      setIsEvaluateInterviewOpen(false);
-    } catch (error) {
-      message.error(error || "Failed to add interview");
-    }
-  };
-
-  const handleAssessmentCompleted = (assessmentId) => {
-    try {
-      dispatch(
-        completeCandidateAssessment({ candidateId: id, assessmentId })
-      ).unwrap();
-      message.success("Assessment Marked as Completed");
-    } catch (error) {
-      message.error(error || "Failed to marked assessment as completed.");
-    }
-  };
-  const handleInterviewCompleted = (interviewId) => {
-    try {
-      dispatch(
-        completeCandidateInterview({ candidateId: id, interviewId })
-      ).unwrap();
-      message.success("Interview Marked as Completed");
-    } catch (error) {
-      message.error(error || "Failed to marked interview as completed.");
-    }
-  };
-
-  const getStatusTagColor = (status) => {
+  const getStatusTagColor = useCallback((status) => {
     switch (status) {
       case "Scheduled":
         return "blue";
@@ -249,9 +202,9 @@ const CandidateDetails = () => {
       default:
         return "orange";
     }
-  };
+  }, []);
 
-  const getOfferStatusColor = (status) => {
+  const getOfferStatusColor = useCallback((status) => {
     switch (status) {
       case "Pending":
         return "gold";
@@ -262,7 +215,73 @@ const CandidateDetails = () => {
       default:
         return "default";
     }
+  }, []);
+
+  // Handlers
+  const handleEvaluationAssessment = async (values) => {
+    try {
+      await dispatch(
+        updateCandidateAssessment({
+          candidateId: id,
+          assessmentId: selectedAssessment.assessmentId,
+          assessmentData: values,
+        })
+      ).unwrap();
+      setActiveTabKey("2");
+      setIsEvaluateAssessmentOpen(false);
+      message.success("Assessment evaluated successfully");
+    } catch (error) {
+      message.error(error || "Failed to evaluate assessment");
+    }
   };
+
+  const handleEvaluationInterview = async (values) => {
+    try {
+      await dispatch(
+        updateCandidateInterview({
+          candidateId: id,
+          interviewId: selectedInterview.interviewId,
+          interviewData: values,
+        })
+      ).unwrap();
+      setActiveTabKey("3");
+      setIsEvaluateInterviewOpen(false);
+      message.success("Interview evaluated successfully");
+    } catch (error) {
+      message.error(error || "Failed to evaluate interview");
+    }
+  };
+
+  const handleAssessmentCompleted = async (assessmentId) => {
+    try {
+      await dispatch(
+        completeCandidateAssessment({ candidateId: id, assessmentId })
+      ).unwrap();
+      message.success("Assessment marked as completed");
+    } catch (error) {
+      message.error(error || "Failed to mark assessment as completed");
+    }
+  };
+
+  const handleInterviewCompleted = async (interviewId) => {
+    try {
+      await dispatch(
+        completeCandidateInterview({ candidateId: id, interviewId })
+      ).unwrap();
+      message.success("Interview marked as completed");
+    } catch (error) {
+      message.error(error || "Failed to mark interview as completed");
+    }
+  };
+
+  // Early returns
+  if (!candidate && !loading) {
+    return <NotFoundPage />;
+  }
+
+  if (loading) {
+    return <Spin fullscreen />;
+  }
 
   return (
     <div
@@ -288,11 +307,7 @@ const CandidateDetails = () => {
         title={
           <Flex justify="space-between" align="center">
             <Flex align="center" gap="middle">
-              <Avatar
-                size={40}
-                src={candidate.photoUrl}
-                icon={<UserOutlined />}
-              />
+              <Avatar size={40} icon={<UserOutlined />} />
               <span>
                 {candidate.fullName} - {candidate.level}
               </span>
@@ -311,21 +326,42 @@ const CandidateDetails = () => {
           scrollbarGutter: "stable",
         }}
       >
-        <Space direction="vertical" size={4}>
-          <Text>
-            <strong>Email:</strong> {candidate.email}
-          </Text>
-          <Text>
-            <strong>Phone:</strong> {candidate.phoneNumber}
-          </Text>
-          <Text>
-            <strong>Applied Position:</strong> {candidate.appliedPosition}
-          </Text>
-          <Text>
-            <strong>Applied Date:</strong>{" "}
-            {dayjs(candidate.applicationDate).format("MMMM D, YYYY")}
-          </Text>
-        </Space>
+        <Descriptions
+          column={{ xs: 1, sm: 2, md: 4 }}
+          layout="vertical"
+          size="small"
+          style={{ marginBottom: 16 }}
+        >
+          <Descriptions.Item label={<Text strong>Email</Text>}>
+            <Space>
+              <MailOutlined />
+              <Text>{candidate.email}</Text>
+            </Space>
+          </Descriptions.Item>
+
+          <Descriptions.Item label={<Text strong>Phone</Text>}>
+            <Space>
+              <PhoneOutlined />
+              <Text>{candidate.phoneNumber || "N/A"}</Text>
+            </Space>
+          </Descriptions.Item>
+
+          <Descriptions.Item label={<Text strong>Position</Text>}>
+            <Space>
+              <SolutionOutlined />
+              <Text>{candidate.appliedPosition}</Text>
+            </Space>
+          </Descriptions.Item>
+
+          <Descriptions.Item label={<Text strong>Applied Date</Text>}>
+            <Space>
+              <CalendarOutlined />
+              <Text>
+                {dayjs(candidate.applicationDate).format("MMMM D, YYYY")}
+              </Text>
+            </Space>
+          </Descriptions.Item>
+        </Descriptions>
         <Divider />
         {/* Steps */}
         <Steps
@@ -445,6 +481,14 @@ const CandidateDetails = () => {
                               "MMMM D, YYYY h:mm A"
                             )}
                           </p>
+                          {assessment.evaluationDate && (
+                            <p>
+                              <strong>Evaluation Date:</strong>{" "}
+                              {dayjs(assessment.evaluationDate).format(
+                                "MMMM D, YYYY h:mm A"
+                              )}
+                            </p>
+                          )}
                           <p>
                             <strong>Score:</strong>{" "}
                             {assessment?.score !== undefined

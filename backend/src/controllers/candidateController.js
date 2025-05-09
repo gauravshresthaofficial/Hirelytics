@@ -261,6 +261,7 @@ const addAssessmentToCandidate = async (req, res) => {
     candidate.assessments.push(newAssessment);
     candidate.currentStatus = "Assessment Scheduled";
     const updatedCandidate = await candidate.save();
+    console.log(updatedCandidate);
 
     res.status(200).json({
       success: true,
@@ -330,7 +331,7 @@ const completeCandidateAssessment = async (req, res) => {
 
     res.status(200).json({
       success: true,
-      data: responseData,
+      data: updatedCandidate,
       message: "Assessment marked as completed successfully",
     });
   } catch (error) {
@@ -423,19 +424,11 @@ const updateCandidateAssessment = async (req, res) => {
     }
 
     const updatedCandidate = await candidate.save();
-
-    const responseData = {
-      _id: updatedCandidate._id,
-      fullName: updatedCandidate.fullName,
-      currentStatus: updatedCandidate.currentStatus,
-      assessment: updatedCandidate.assessments.find(
-        (a) => a.assessmentId.toString() === assessmentId
-      ),
-    };
+    console.log(updatedCandidate);
 
     res.status(200).json({
       success: true,
-      data: responseData,
+      data: updatedCandidate,
       message: "Assessment updated successfully",
     });
   } catch (error) {
@@ -598,18 +591,9 @@ const completeCandidateInterview = async (req, res) => {
 
     const updatedCandidate = await candidate.save();
 
-    const responseData = {
-      _id: updatedCandidate._id,
-      fullName: updatedCandidate.fullName,
-      currentStatus: "Completed",
-      interview: updatedCandidate.interviews.find(
-        (i) => i.interviewId.toString() === interviewId
-      ),
-    };
-
     res.status(200).json({
       success: true,
-      data: responseData,
+      data: updatedCandidate,
       message: "Interview marked as completed successfully",
     });
   } catch (error) {
@@ -709,18 +693,9 @@ const updateCandidateInterview = async (req, res) => {
 
     const updatedCandidate = await candidate.save();
 
-    const responseData = {
-      _id: updatedCandidate._id,
-      fullName: updatedCandidate.fullName,
-      currentStatus: updatedCandidate.currentStatus,
-      interview: updatedCandidate.interviews.find(
-        (i) => i.interviewId.toString() === interviewId
-      ),
-    };
-
     res.status(200).json({
       success: true,
-      data: responseData,
+      data: updatedCandidate,
       message: "Interview updated successfully",
     });
   } catch (error) {
