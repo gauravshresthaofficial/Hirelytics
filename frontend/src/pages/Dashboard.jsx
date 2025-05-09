@@ -1,9 +1,18 @@
-import { useEffect, useState, useMemo } from "react";
+import { useEffect, useState, useMemo, lazy, Suspense } from "react";
 import { useSelector, useDispatch } from "react-redux";
 import { fetchCandidates } from "../features/candidate/candidateSlice";
 import { fetchPositions } from "../features/position/positionSlice";
 import { getCandidatesByStageCount } from "../api/report/reportServices";
-import { Card, Statistic, Grid, Flex, Spin, Tooltip } from "antd";
+import {
+  Card,
+  Statistic,
+  Grid,
+  Flex,
+  Spin,
+  Tooltip,
+  Skeleton,
+  Space,
+} from "antd";
 import {
   TeamOutlined,
   GiftOutlined,
@@ -12,12 +21,24 @@ import {
 } from "@ant-design/icons";
 import { useNavigate } from "react-router-dom";
 
-import CandidateSources from "../components/dashboard/new/CandidatesSource";
-import SkillDistribution from "../components/dashboard/new/SkillDistribution";
-import InterviewStats from "../components/dashboard/new/InterviewStats";
-import AssessmentOverview from "../components/dashboard/AssessmentOverview";
-import PositionStats from "../components/dashboard/new/PositionStats";
-import CalendaComponent from "../components/Interviews/CalendaComponent";
+const CandidateSources = lazy(() =>
+  import("../components/dashboard/new/CandidatesSource")
+);
+const SkillDistribution = lazy(() =>
+  import("../components/dashboard/new/SkillDistribution")
+);
+const InterviewStats = lazy(() =>
+  import("../components/dashboard/new/InterviewStats")
+);
+const AssessmentOverview = lazy(() =>
+  import("../components/dashboard/AssessmentOverview")
+);
+const PositionStats = lazy(() =>
+  import("../components/dashboard/new/PositionStats")
+);
+const CalendaComponent = lazy(() =>
+  import("../components/Interviews/CalendaComponent")
+);
 
 const { useBreakpoint } = Grid;
 
@@ -121,40 +142,76 @@ const Dashboard = () => {
       </Flex>
 
       {/* Calendar */}
-      <CalendaComponent />
+      <Suspense
+        fallback={
+          <Skeleton.Node active style={{ width: "100%", height: "400px" }} />
+        }
+      >
+        <CalendaComponent />
+      </Suspense>
 
-      {/* Candidate Sources + Skills */}
       <Flex
         gap="middle"
-        style={{ flexDirection: screens.md ? "row" : "column" }}
+        style={{ flexDirection: screens.md ? "row" : "column", width: "100%" }}
       >
-        <Card title="Sources" style={{ flex: 1 }}>
-          <CandidateSources candidates={candidates} />
-        </Card>
-        <Card title="Skill Distribution" style={{ flex: 1 }}>
-          <SkillDistribution candidates={candidates} />
-        </Card>
+        <Suspense
+          fallback={
+            <Skeleton
+              paragraph={{ rows: 8 }}
+              active
+              style={{ width: "50%", height: "400px" }}
+            />
+          }
+        >
+          <Card title="Sources" style={{ flex: 1 }}>
+            <CandidateSources candidates={candidates} />
+          </Card>
+        </Suspense>
+
+        <Suspense
+          fallback={
+            <Skeleton
+              active
+              paragraph={{ rows: 8 }}
+              style={{ width: "50%", height: "400px" }}
+            />
+          }
+        >
+          <Card title="Skill Distribution" style={{ flex: 1 }}>
+            <SkillDistribution candidates={candidates} />
+          </Card>
+        </Suspense>
       </Flex>
 
       {/* Position Stats */}
-      <PositionStats candidates={candidates} positions={positions} />
+      <Suspense
+        fallback={
+          <Skeleton.Node active style={{ width: "100%", height: "400px" }} />
+        }
+      >
+        <PositionStats candidates={candidates} positions={positions} />
+      </Suspense>
 
       {/* Interview Stats + Assessment Overview */}
       <Flex
         gap="middle"
         style={{ flexDirection: screens.md ? "row" : "column" }}
       >
-        <Card title="Interview Stats" style={{ flex: 1 }}>
-          <InterviewStats candidates={candidates} />
-        </Card>
-        <Tooltip title="Go to assessment page" placement="top">
-          <Card
-            title="Assessment Overview"
-            style={{ flex: 1, cursor: "pointer" }}
-            onClick={() => navigate("/assessments")}
-          >
-            <AssessmentOverview candidates={candidates} />
+        <Suspense fallback={<Spin tip="Loading Interview Stats..." />}>
+          <Card title="Interview Stats" style={{ flex: 1 }}>
+            <InterviewStats candidates={candidates} />
           </Card>
+        </Suspense>
+        <Tooltip title="Go to assessment page" placement="top">
+          <Suspense fallback={<Spin tip="Loading Assessment Overview..." />}>
+            <Card
+              title="Assessment Overview"
+              style={{ flex: 1, cursor: "pointer" }}
+              onClick={() => navigate("/assessments")}
+            >
+              <AssessmentOverview candidates={candidates} />
+            </Card>
+          </Suspense>
         </Tooltip>
       </Flex>
     </Flex>

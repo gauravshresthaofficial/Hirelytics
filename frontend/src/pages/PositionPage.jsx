@@ -31,7 +31,11 @@ const PositionPage = () => {
   const navigate = useNavigate();
   const dispatch = useDispatch();
 
-  const { data: positions, error } = useSelector((state) => state.positions);
+  const {
+    data: positions,
+    error,
+    loading,
+  } = useSelector((state) => state.positions);
 
   useEffect(() => {
     dispatch(fetchPositions());
@@ -136,6 +140,7 @@ const PositionPage = () => {
         dataSource={filteredData}
         columns={columns}
         rowKey="_id"
+        loading={loading}
         pagination={{
           defaultPageSize: 10,
           showSizeChanger: true,

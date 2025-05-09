@@ -21,7 +21,7 @@ import { useNavigate } from "react-router-dom";
 
 const { Option } = Select;
 
-const InterviewTable = ({ interviews }) => {
+const InterviewTable = ({ interviews, loading }) => {
   const [searchText, setSearchText] = useState("");
   const [filterMode, setFilterMode] = useState("All");
   const [filterDuration, setFilterDuration] = useState(null);
@@ -132,6 +132,7 @@ const InterviewTable = ({ interviews }) => {
       <Table
         columns={columns}
         dataSource={filteredData}
+        loading={loading}
         rowKey="_id"
         pagination={{
           defaultPageSize: 10,
