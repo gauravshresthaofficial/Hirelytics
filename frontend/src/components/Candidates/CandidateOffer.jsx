@@ -72,6 +72,7 @@ const CandidateOffer = ({ candidate, positions }) => {
         onCancel={handleCancel}
         confirmLoading={loading}
         okText="Offer Position"
+        centered
       >
         <Form form={form} layout="vertical">
           <Form.Item name="offeredPositionId">

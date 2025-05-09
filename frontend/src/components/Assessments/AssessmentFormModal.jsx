@@ -63,6 +63,7 @@ const AssessmentFormModal = ({ isEditing, initialValues }) => {
       <Modal
         title={isEditing ? "Edit Assessment" : "Add Assessment"}
         open={isModalOpen}
+        centered
         onCancel={handleCancel}
         onOk={handleSubmit}
         confirmLoading={loading}

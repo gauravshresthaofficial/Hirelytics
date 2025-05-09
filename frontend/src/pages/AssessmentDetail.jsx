@@ -93,7 +93,7 @@ const AssessmentDetail = () => {
   };
 
   if (loading) {
-    return <Loading />;
+    return <Spin fullscreen />;
   }
 
   if (!selectedAssessment) {

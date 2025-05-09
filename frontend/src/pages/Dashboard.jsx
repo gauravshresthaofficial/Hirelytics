@@ -90,7 +90,7 @@ const Dashboard = () => {
     });
   };
 
-  if (isLoading) return <Spin tip="Loading dashboard data..." fullscreen />;
+  if (isLoading) return <Spin tip="Loading dashboard data" fullscreen />;
 
   return (
     <Flex

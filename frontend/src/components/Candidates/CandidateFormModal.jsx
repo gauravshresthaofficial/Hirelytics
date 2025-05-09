@@ -72,6 +72,7 @@ const CandidateFormModal = ({
         </Title>
       }
       open={open}
+      centered
       onCancel={handleCancel}
       onOk={handleOk}
       width={800}

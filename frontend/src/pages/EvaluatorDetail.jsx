@@ -351,7 +351,7 @@ const EvaluatorDetail = () => {
   };
 
   if (loading) {
-    return <Spin tip="Loading dashboard data..." fullscreen />;
+    return <Spin fullscreen />;
   }
 
   if (!selectedEvaluator) {

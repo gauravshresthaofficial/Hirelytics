@@ -107,6 +107,7 @@ const CandidateHireRejectModal = ({ candidate, positionId }) => {
         }}
         confirmLoading={loading}
         okText="Confirm Hire"
+        centered
       >
         <Form form={hireForm} layout="vertical">
           <Form form={hireForm} layout="vertical">
@@ -180,6 +181,7 @@ const CandidateHireRejectModal = ({ candidate, positionId }) => {
           rejectForm.resetFields();
         }}
         confirmLoading={loading}
+        centered
         okText="Confirm Rejection"
         okButtonProps={{ danger: true }}
       >
