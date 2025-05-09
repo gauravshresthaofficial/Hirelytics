@@ -53,12 +53,10 @@ const candidateSchema = new mongoose.Schema(
       type: String,
       enum: [
         "Applied",
-
         "Assessment Scheduled",
         "Assessment In Progress",
         "Assessment Completed",
         "Assessment Evaluated",
-
         "Interview Scheduled",
         "Interview In Progress",
         "Interview Completed",

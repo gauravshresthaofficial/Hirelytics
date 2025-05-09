@@ -18,11 +18,13 @@ import {
   Button,
   Steps,
   message,
+  Tag,
   Avatar,
   Space,
   Flex,
   Typography,
   Divider,
+  Spin,
 } from "antd";
 import { UserOutlined, ArrowLeftOutlined } from "@ant-design/icons";
 import CandidateProfile from "../components/Candidates/CandidateProfile";
@@ -38,6 +40,8 @@ import { fetchPositions } from "../features/position/positionSlice";
 import CandidateOffer from "../components/Candidates/CandidateOffer";
 import CandidateOfferStatusModal from "../components/Candidates/CandidateOfferStatusModal";
 import CandidateHireRejectModal from "../components/Candidates/CandidateHireRejectModal";
+import dayjs from "dayjs";
+import NotFoundPage from "../components/NotFoundPage";
 
 const { TabPane } = Tabs;
 const { Text } = Typography;
@@ -54,12 +58,13 @@ const CandidateDetails = () => {
   const interviews = useSelector((state) => state.interviews.data);
   const users = useSelector((state) => state.users.data);
   const positions = useSelector((state) => state.positions.data);
-  const candidates = useSelector((state) => state.candidates.data);
+  const { candidates, loading } = useSelector((state) => state.candidates);
 
+  const { _id: userId, role: userRole } = useSelector(
+    (state) => state.auth.user
+  );
   const eventType = location.state?.type?.toLowerCase();
   const [activeTabKey, setActiveTabKey] = useState("1");
-  const [isAssignAssessmentOpen, setIsAssignAssessmentOpen] = useState(false);
-  const [isScheduleInterviewOpen, setIsScheduleInterviewOpen] = useState(false);
   const [isEvaluateAssessmentOpen, setIsEvaluateAssessmentOpen] =
     useState(false);
   const [isEvaluateInterviewOpen, setIsEvaluateInterviewOpen] = useState(false);
@@ -77,12 +82,26 @@ const CandidateDetails = () => {
   }, [eventType]);
 
   useEffect(() => {
-    if (!candidates) {
+    const status = candidate?.currentStatus || "";
+
+    if (status.includes("Assessment")) {
+      setActiveTabKey("2");
+    } else if (status.includes("Interview")) {
+      setActiveTabKey("3");
+    } else if (["Offer Extended", "Offer Accepted", "Hired"].includes(status)) {
+      setActiveTabKey("4");
+    } else {
+      setActiveTabKey("1"); // Default to Basic Info tab
+    }
+  }, [candidate?.currentStatus]);
+
+  useEffect(() => {
+    if (!candidates || candidates.length === 0) {
       dispatch(fetchCandidates());
     }
-    if (!candidate) {
-      dispatch(fetchCandidateById(id));
-    }
+    // if (!candidate) {
+    //   dispatch(fetchCandidateById(id));
+    // }
     if (!assessments || assessments.length === 0) {
       dispatch(fetchAssessments());
     }
@@ -95,12 +114,14 @@ const CandidateDetails = () => {
     if (!positions || positions.length === 0) {
       dispatch(fetchPositions());
     }
-  }, [dispatch, id, candidate, assessments, interviews, users, positions]);
+  }, [dispatch, id, assessments, interviews, users, positions]);
 
-  if (!candidate) {
-    return <div>Loading candidate details...</div>;
-  } else {
-    console.log(candidate);
+  if (!candidate && !loading) {
+    return <NotFoundPage />;
+  }
+
+  if (loading) {
+    return <Spin tip="Loading dashboard data..." fullscreen />;
   }
 
   const getStepStatus = (stageData, type) => {
@@ -171,20 +192,7 @@ const CandidateDetails = () => {
       setIsEvaluateAssessmentOpen(false);
       message.success("Assessment Evaluated successfully");
     } catch (error) {
-      message.error("Failed to evaluate assignment");
-    }
-  };
-
-  const handleScheduleInterview = async (values) => {
-    try {
-      // Call API to schedule interview
-      dispatch(
-        addInterviewToCandidate({ candidateId: id, interviewData: values })
-      );
-      message.success("Interview scheduled successfully!");
-      setIsScheduleInterviewOpen(false);
-    } catch (err) {
-      message.error("Failed to schedule interview.");
+      message.error(error || "Failed to evaluate assignment");
     }
   };
 
@@ -201,7 +209,7 @@ const CandidateDetails = () => {
       message.success("Interview Evaluated successfully");
       setIsEvaluateInterviewOpen(false);
     } catch (error) {
-      message.error("Failed to add interview");
+      message.error(error || "Failed to add interview");
     }
   };
 
@@ -212,7 +220,7 @@ const CandidateDetails = () => {
       ).unwrap();
       message.success("Assessment Marked as Completed");
     } catch (error) {
-      message.error("Failed to marked assessment as completed.");
+      message.error(error || "Failed to marked assessment as completed.");
     }
   };
   const handleInterviewCompleted = (interviewId) => {
@@ -222,7 +230,37 @@ const CandidateDetails = () => {
       ).unwrap();
       message.success("Interview Marked as Completed");
     } catch (error) {
-      message.error("Failed to marked interview as completed.");
+      message.error(error || "Failed to marked interview as completed.");
+    }
+  };
+
+  const getStatusTagColor = (status) => {
+    switch (status) {
+      case "Scheduled":
+        return "blue";
+      case "In Progress":
+        return "orange";
+      case "Completed":
+        return "green";
+      case "Evaluated":
+        return "purple";
+      case "Cancelled":
+        return "red";
+      default:
+        return "orange";
+    }
+  };
+
+  const getOfferStatusColor = (status) => {
+    switch (status) {
+      case "Pending":
+        return "gold";
+      case "Accepted":
+        return "green";
+      case "Rejected":
+        return "red";
+      default:
+        return "default";
     }
   };
 
@@ -284,7 +322,8 @@ const CandidateDetails = () => {
             <strong>Applied Position:</strong> {candidate.appliedPosition}
           </Text>
           <Text>
-            <strong>Applied Date:</strong> {candidate.applicationDate}
+            <strong>Applied Date:</strong>{" "}
+            {dayjs(candidate.applicationDate).format("MMMM D, YYYY")}
           </Text>
         </Space>
         <Divider />
@@ -305,187 +344,278 @@ const CandidateDetails = () => {
         </Steps>
         <Divider />
 
-        <Tabs activeKey={activeTabKey} onChange={setActiveTabKey}>
-          {/* Basic Information Section */}
-          <TabPane tab="Basic Information" key="1">
-            <CandidateProfile candidate={candidate} />
-          </TabPane>
+        <Tabs
+          activeKey={activeTabKey}
+          onChange={setActiveTabKey}
+          items={[
+            {
+              key: "1",
+              label: "Basic Information",
+              children: <CandidateProfile candidate={candidate} />,
+            },
+            {
+              key: "2",
+              label: "Assessments",
+              children: (
+                <>
+                  {(candidate.currentStatus === "Applied" ||
+                    candidate.currentStatus === "Assessment Evaluated") && (
+                    <div style={{ marginBottom: "16px" }}>
+                      <AssignAssessmentModal candidate={candidate} />
+                    </div>
+                  )}
 
-          {/* Assessments Section */}
-          <TabPane tab="Assessments" key="2">
-            {(candidate.currentStatus === "Applied" ||
-              candidate.currentStatus === "Assessment Evaluated") && (
-              <div style={{ marginBottom: "16px" }}>
-                <AssignAssessmentModal candidate={candidate} />
-              </div>
-            )}
+                  {candidate.assessments?.length > 0 ? (
+                    candidate.assessments.map((assessment, index) => (
+                      <Card
+                        key={index}
+                        title={
+                          <Flex justify="space-between" align="center">
+                            <Space>
+                              {assessment.assessmentName}
+                              <Tag color={getStatusTagColor(assessment.status)}>
+                                {assessment.status}
+                              </Tag>
+                            </Space>
+                            <Flex gap="small">
+                              {candidate.currentStatus ==
+                                "Assessment Scheduled" &&
+                                assessment.status == "Scheduled" && (
+                                  <Button
+                                    type="primary"
+                                    onClick={() =>
+                                      handleAssessmentCompleted(
+                                        assessment.assessmentId
+                                      )
+                                    }
+                                    disabled={
+                                      !(
+                                        userRole === "hr" ||
+                                        userRole === "admin" ||
+                                        (userRole === "evaluator" &&
+                                          userId ===
+                                            assessment.assignedEvaluatorId)
+                                      ) ||
+                                      !(
+                                        assessment.status === "Scheduled" ||
+                                        assessment.status === "In Progress"
+                                      )
+                                    }
+                                  >
+                                    Mark Completed
+                                  </Button>
+                                )}
 
-            {/* Display candidate's assessments */}
-            {candidate.assessments && candidate.assessments.length > 0 ? (
-              candidate.assessments.map((assessment, index) => (
-                <Card
-                  key={index}
-                  title={
-                    <Flex justify="space-between" align="center">
-                      {assessment.assessmentName}
-                      <Flex gap="small">
-                        {(assessment.status === "Scheduled" ||
-                          assessment.status === " In Progress") && (
-                          <Button
-                            type="primary"
-                            onClick={() =>
-                              handleAssessmentCompleted(assessment.assessmentId)
-                            }
-                          >
-                            Mark Completed
-                          </Button>
-                        )}
-                        {assessment.status === "Completed" && (
-                          <Button
-                            type="primary"
-                            // style={{ marginTop: 4 }}
-                            onClick={() => {
-                              setSelectedAssessment(assessment);
-                              setIsEvaluateAssessmentOpen(true);
-                            }}
-                          >
-                            Evaluate
-                          </Button>
-                        )}
-                      </Flex>
-                    </Flex>
-                  }
-                  style={{ marginBottom: "16px" }}
-                >
-                  <p>
-                    <strong>Evaluator:</strong> {assessment.evaluatedBy}
-                  </p>
-                  <p>
-                    <strong>Scheduled Date:</strong> {assessment.scheduledDate}
-                  </p>
-                  <p>
-                    <strong>Status:</strong> {assessment.status}
-                  </p>
-                  <p>
-                    <strong>Score:</strong>{" "}
-                    {assessment?.score !== undefined
-                      ? `${assessment.score}/${assessment.maxScore}`
-                      : "N/A"}
-                  </p>
-                </Card>
-              ))
-            ) : (
-              <p>No assessments available.</p>
-            )}
-          </TabPane>
+                              {(candidate.currentStatus ==
+                                "Assessment Completed" ||
+                                candidate.currentStatus ==
+                                  "Assessment Scheduled") &&
+                                assessment.status == "Completed" && (
+                                  <Button
+                                    type="primary"
+                                    onClick={() => {
+                                      setSelectedAssessment(assessment);
+                                      setIsEvaluateAssessmentOpen(true);
+                                    }}
+                                    disabled={
+                                      !(
+                                        userRole === "hr" ||
+                                        userRole === "admin" ||
+                                        (userRole === "evaluator" &&
+                                          userId ===
+                                            assessment.assignedEvaluatorId)
+                                      ) || assessment.status !== "Completed"
+                                    }
+                                  >
+                                    Evaluate
+                                  </Button>
+                                )}
+                            </Flex>
+                          </Flex>
+                        }
+                        style={{ marginBottom: "16px" }}
+                      >
+                        <Space direction="vertical">
+                          <p>
+                            <strong>Evaluator:</strong> {assessment.evaluatedBy}
+                          </p>
+                          <p>
+                            <strong>Scheduled Date:</strong>{" "}
+                            {dayjs(assessment.scheduledDate).format(
+                              "MMMM D, YYYY h:mm A"
+                            )}
+                          </p>
+                          <p>
+                            <strong>Score:</strong>{" "}
+                            {assessment?.score !== undefined
+                              ? `${assessment.score}/${assessment.maxScore}`
+                              : "N/A"}
+                          </p>
+                        </Space>
+                      </Card>
+                    ))
+                  ) : (
+                    <p>No assessments available.</p>
+                  )}
+                </>
+              ),
+            },
+            {
+              key: "3",
+              label: "Interviews",
+              children: (
+                <>
+                  {(candidate.currentStatus === "Interview Evaluated" ||
+                    candidate.currentStatus === "Assessment Evaluated") && (
+                    <div style={{ marginBottom: "16px" }}>
+                      <ScheduleInterviewModal candidate={candidate} />
+                    </div>
+                  )}
 
-          {/* Interviews Section */}
-          <TabPane tab="Interviews" key="3">
-            {(candidate.currentStatus === "Interview Evaluated" ||
-              candidate.currentStatus === "Assessment Evaluated") && (
-              <div style={{ marginBottom: "16px" }}>
-                <ScheduleInterviewModal candidate={candidate} />
-              </div>
-            )}
-            {/* Display candidate's interviews */}
-            {candidate.interviews && candidate.interviews.length > 0 ? (
-              candidate.interviews.map((interview, index) => (
-                <Card
-                  title={
-                    <Flex justify="space-between" align="center">
-                      {interview.interviewName}
-                      <Flex gap="small">
-                        {(interview.status === "Scheduled" ||
-                          interview.status === " In Progress") && (
-                          <Button
-                            type="primary"
-                            onClick={() =>
-                              handleInterviewCompleted(interview.interviewId)
-                            }
-                          >
-                            Mark Completed
-                          </Button>
+                  {candidate.interviews?.length > 0 ? (
+                    candidate.interviews.map((interview, index) => (
+                      <Card
+                        title={
+                          <Flex justify="space-between" align="center">
+                            <Space>
+                              {interview.interviewName}
+                              <Tag color={getStatusTagColor(interview.status)}>
+                                {interview.status}
+                              </Tag>
+                            </Space>
+                            <Flex gap="small">
+                              {(interview.status === "Scheduled" ||
+                                interview.status === " In Progress") && (
+                                <Button
+                                  type="primary"
+                                  onClick={() =>
+                                    handleInterviewCompleted(
+                                      interview.interviewId
+                                    )
+                                  }
+                                >
+                                  Mark Completed
+                                </Button>
+                              )}
+                              {interview.status === "Completed" && (
+                                <Button
+                                  type="primary"
+                                  onClick={() => {
+                                    setSelectedInterview(interview);
+                                    setIsEvaluateInterviewOpen(true);
+                                  }}
+                                >
+                                  Evaluate
+                                </Button>
+                              )}
+                            </Flex>
+                          </Flex>
+                        }
+                        key={index}
+                        style={{ marginBottom: "16px" }}
+                      >
+                        <Space direction="vertical">
+                          <p>
+                            <strong>Interviewer:</strong>{" "}
+                            {interview.interviewerName}
+                          </p>
+                          <p>
+                            <strong>Scheduled On:</strong>{" "}
+                            {dayjs(interview.scheduledDatetime).format(
+                              "MMMM D, YYYY h:mm A"
+                            )}
+                          </p>
+                          <p>
+                            {interview.interviewType !== "Online" ? (
+                              <strong>Location:</strong>
+                            ) : (
+                              <strong>Link:</strong>
+                            )}{" "}
+                            {interview.interviewLocation}
+                          </p>
+                          <p>
+                            <strong>Score:</strong>{" "}
+                            {interview?.score !== undefined
+                              ? `${interview.score}/${interview.maxScore}`
+                              : "N/A"}
+                          </p>
+                        </Space>
+                      </Card>
+                    ))
+                  ) : (
+                    <p>No interviews scheduled.</p>
+                  )}
+                </>
+              ),
+            },
+            {
+              key: "4",
+              label: "Offer",
+              children: (
+                <>
+                  {candidate.offer ? (
+                    <Card
+                      title={
+                        <Flex justify="space-between" align="center">
+                          <Space>
+                            {candidate.offer.offeredPositionName}
+                            <Tag
+                              color={getOfferStatusColor(
+                                candidate.offer.offerStatus
+                              )}
+                            >
+                              {candidate.offer.offerStatus}
+                            </Tag>
+                          </Space>
+                          <Flex gap="small">
+                            {candidate.offer.offerStatus === "Pending" && (
+                              <CandidateOfferStatusModal
+                                candidateId={candidate._id}
+                              />
+                            )}
+                          </Flex>
+                        </Flex>
+                      }
+                    >
+                      <Space direction="vertical">
+                        <p>
+                          <strong>Salary:</strong> NRP {candidate.offer.salary}
+                        </p>
+                        <p>
+                          <strong>Offered Date:</strong>{" "}
+                          {dayjs(candidate.offer.offerDate).format(
+                            "MMMM D, YYYY"
+                          )}
+                        </p>
+                        {candidate.offer?.acceptanceDate && (
+                          <p>
+                            <strong>Offered Date:</strong>{" "}
+                            {dayjs(candidate.offer.acceptanceDate).format(
+                              "MMMM D, YYYY"
+                            )}
+                          </p>
                         )}
-                        {interview.status === "Completed" && (
-                          <Button
-                            type="primary"
-                            onClick={() => {
-                              setSelectedInterview(interview);
-                              setIsEvaluateInterviewOpen(true);
-                            }}
-                          >
-                            Evaluate
-                          </Button>
+                        {candidate.offer?.rejectionDate && (
+                          <p>
+                            <strong>Offered Date:</strong>{" "}
+                            {dayjs(candidate.offer.rejectionDate).format(
+                              "MMMM D, YYYY"
+                            )}
+                          </p>
                         )}
-                      </Flex>
-                    </Flex>
-                  }
-                  key={index}
-                  style={{ marginBottom: "16px" }}
-                >
-                  <p>
-                    <strong>Interviewer:</strong> {interview.interviewerName}
-                  </p>
-                  <p>
-                    <strong>Scheduled On:</strong>{" "}
-                    {new Date(interview.scheduledDatetime).toLocaleString()}
-                  </p>
-                  <p>
-                    {interview.interviewType !== "Online" ? (
-                      <strong>Location:</strong>
-                    ) : (
-                      <strong>Link:</strong>
-                    )}{" "}
-                    {interview.interviewLocation}
-                  </p>
-                  <p>
-                    <strong>Status:</strong> {interview.status}
-                  </p>
-                  <p>
-                    <strong>Score:</strong>{" "}
-                    {interview?.score !== undefined
-                      ? `${interview.score}/${interview.maxScore}`
-                      : "N/A"}
-                  </p>
-                </Card>
-              ))
-            ) : (
-              <p>No interviews scheduled.</p>
-            )}
-          </TabPane>
-
-          {/* Offer Section */}
-          <TabPane tab="Offer" key="4">
-            {candidate.offer ? (
-              <Card
-                title={
-                  <Flex justify="space-between" align="center">
-                    {candidate.offer.offeredPositionName}
-                    <Flex gap="small">
-                      {candidate.offer.offerStatus === "Pending" && (
-                        <CandidateOfferStatusModal
-                          candidateId={candidate._id}
-                        />
-                      )}
-                    </Flex>
-                  </Flex>
-                }
-              >
-                <p>
-                  <strong>Salary:</strong> NRP {candidate.offer.salary}
-                </p>
-                <p>
-                  <strong>Offered Date:</strong> {candidate.offer.offerDate}
-                </p>
-                <p>
-                  <strong>Status:</strong> {candidate.offer.offerStatus}
-                </p>
-              </Card>
-            ) : (
-              <CandidateOffer candidate={candidate} positions={positions} />
-            )}
-          </TabPane>
-        </Tabs>
+                      </Space>
+                    </Card>
+                  ) : (
+                    <CandidateOffer
+                      candidate={candidate}
+                      positions={positions}
+                    />
+                  )}
+                </>
+              ),
+            },
+          ]}
+        />
 
         {/* Assign Assessment Modal */}
         {/* <AssignAssessmentModal /> */}

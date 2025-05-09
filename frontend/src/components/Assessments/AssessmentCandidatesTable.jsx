@@ -4,7 +4,6 @@ import {
   Avatar,
   Tag,
   Space,
-  Typography,
   Progress,
   Button,
   Input,
@@ -15,7 +14,6 @@ import {
 import { UserOutlined } from "@ant-design/icons";
 import dayjs from "dayjs";
 
-const { Text } = Typography;
 const { Option } = Select;
 
 const AssessmentCandidatesTable = ({
@@ -50,12 +48,6 @@ const AssessmentCandidatesTable = ({
       title: "Candidate",
       dataIndex: "fullName",
       key: "fullName",
-      render: (text, record) => (
-        <Space>
-          <Avatar src={record.photoUrl} icon={<UserOutlined />} />
-          <Text strong>{text}</Text>
-        </Space>
-      ),
     },
     {
       title: "Status",

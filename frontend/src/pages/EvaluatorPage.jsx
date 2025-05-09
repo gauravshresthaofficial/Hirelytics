@@ -38,15 +38,15 @@ const EvaluatorPage = () => {
     );
 
   const columns = [
-    {
-      title: "Profile",
-      dataIndex: "picture",
-      key: "picture",
-      render: (picture, record) => (
-        <Avatar src={picture} alt={record.fullName} />
-      ),
-      width: 80,
-    },
+    // {
+    //   title: "Profile",
+    //   dataIndex: "picture",
+    //   key: "picture",
+    //   render: (picture, record) => (
+    //     <Avatar src={picture} alt={record.fullName} />
+    //   ),
+    //   width: 80,
+    // },
     {
       title: "Name",
       dataIndex: "fullName",
@@ -64,7 +64,9 @@ const EvaluatorPage = () => {
       dataIndex: "role",
       key: "role",
       render: (role) => (
-        <Tag color={role === "Evaluator" ? "blue" : "default"}>{role}</Tag>
+        <Tag color={role.toLowerCase() === "evaluator" ? "blue" : "default"}>
+          {role.charAt(0).toUpperCase() + role.slice(1)}
+        </Tag>
       ),
     },
     {

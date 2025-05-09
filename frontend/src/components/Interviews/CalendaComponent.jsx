@@ -206,7 +206,6 @@ const CalendaComponent = () => {
           overflowY: "auto",
           flexShrink: 0,
         }}
-        bodyStyle={{ padding: screens.xs ? 10 : 20 }}
       >
         {upcomingEvents.length > 0 ? (
           <List

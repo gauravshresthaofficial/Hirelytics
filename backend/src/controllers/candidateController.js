@@ -322,7 +322,7 @@ const completeCandidateAssessment = async (req, res) => {
     const responseData = {
       _id: updatedCandidate._id,
       fullName: updatedCandidate.fullName,
-      currentStatus: updatedCandidate.currentStatus,
+      currentStatus: "Completed",
       assessment: updatedCandidate.assessments.find(
         (a) => a.assessmentId.toString() === assessmentId
       ),
@@ -601,7 +601,7 @@ const completeCandidateInterview = async (req, res) => {
     const responseData = {
       _id: updatedCandidate._id,
       fullName: updatedCandidate.fullName,
-      currentStatus: updatedCandidate.currentStatus,
+      currentStatus: "Completed",
       interview: updatedCandidate.interviews.find(
         (i) => i.interviewId.toString() === interviewId
       ),

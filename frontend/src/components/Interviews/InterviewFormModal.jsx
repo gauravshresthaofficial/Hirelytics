@@ -43,7 +43,7 @@ const InterviewFormModal = ({ isEditing, initialValues }) => {
       setIsModalOpen(false);
       form.resetFields();
     } catch (err) {
-      message.error(err?.message || "Failed to save interview.");
+      message.error(err || "Failed to save interview.");
     } finally {
       setLoading(false);
     }
@@ -61,24 +61,36 @@ const InterviewFormModal = ({ isEditing, initialValues }) => {
           icon={isEditing ? <EditOutlined /> : <PlusCircleOutlined />}
           onClick={() => setIsModalOpen(true)}
         >
-          {isEditing ? "Edit" : "Create Interview"}
+          {isEditing ? "Edit" : "Add Interview"}
         </Button>
       )}
 
       <Modal
-        title={isEditing ? "Edit Interview" : "Create Interview"}
+        title={isEditing ? "Edit Interview" : "Add Interview"}
         open={isModalOpen}
         onCancel={handleCancel}
         onOk={handleSubmit}
         confirmLoading={loading}
-        okText={isEditing ? "Update" : "Create"}
+        okText={isEditing ? "Update" : "Submit"}
         centered
       >
         <Form form={form} layout="vertical">
           <Form.Item
             name="interviewName"
             label="Interview Name"
-            rules={[{ required: true, message: "Please enter the name!" }]}
+            rules={[
+              { required: true, message: "Please enter the name!" },
+              {
+                validator: (_, value) => {
+                  if (!value || value.length >= 3) {
+                    return Promise.resolve();
+                  }
+                  return Promise.reject(
+                    new Error("Name should be at least 3 characters long")
+                  );
+                },
+              },
+            ]}
           >
             <Input placeholder="Enter interview name" />
           </Form.Item>
@@ -90,7 +102,19 @@ const InterviewFormModal = ({ isEditing, initialValues }) => {
           <Form.Item
             name="duration"
             label="Duration (minutes)"
-            rules={[{ required: true, message: "Please enter the duration!" }]}
+            rules={[
+              { required: true, message: "Please enter the duration!" },
+              {
+                type: "number",
+                min: 30,
+                message: "Duration must be at least 30 minutes",
+              },
+              {
+                type: "number",
+                max: 300,
+                message: "Duration cannot exceed 300 minutes",
+              },
+            ]}
           >
             <InputNumber
               style={{ width: "100%" }}
@@ -110,8 +134,22 @@ const InterviewFormModal = ({ isEditing, initialValues }) => {
             </Select>
           </Form.Item>
 
-          <Form.Item name="instructionForInterview" label="Instructions">
-            <Input.TextArea rows={4} placeholder="Enter instructions" />
+          <Form.Item
+            name="instructionForInterview"
+            label="Instructions"
+            rules={[
+              {
+                max: 300,
+                message: "Instructions must be 300 characters or fewer",
+              },
+            ]}
+          >
+            <Input.TextArea
+              rows={4}
+              placeholder="Enter instructions"
+              maxLength={300}
+              showCount
+            />
           </Form.Item>
         </Form>
       </Modal>

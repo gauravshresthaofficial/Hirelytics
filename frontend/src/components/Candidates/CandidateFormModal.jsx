@@ -49,7 +49,12 @@ const CandidateFormModal = ({
         form.resetFields();
       }
     } catch (error) {
-      message.error("Validation Error.");
+      if (error.errorFields && error.errorFields.length > 0) {
+        const firstErrorMsg = error.errorFields[0].errors[0];
+        message.error(firstErrorMsg);
+      } else {
+        message.error("Validation Error.");
+      }
       console.error("Validation Failed:", error);
     }
   };
@@ -63,14 +68,12 @@ const CandidateFormModal = ({
     <Modal
       title={
         <Title level={4} style={{ marginBottom: 0 }}>
-          {isEditing ? "Edit Candidate" : "Create Candidate"}
+          {isEditing ? "Edit Candidate" : "Add Candidate"}
         </Title>
       }
       open={open}
       onCancel={handleCancel}
       onOk={handleOk}
-      okText={isEditing ? "Update" : "Create"}
-      cancelText="Cancel"
       width={800}
       styles={{
         body: {
@@ -83,17 +86,12 @@ const CandidateFormModal = ({
         <Flex justify="flex-end" gap="small" style={{ padding: "16px 24px" }}>
           <Button onClick={handleCancel}>Cancel</Button>
           <Button type="primary" onClick={handleOk}>
-            {isEditing ? "Update" : "Create"}
+            {isEditing ? "Update" : "Submit"}
           </Button>
         </Flex>
       }
     >
-      <Form
-        form={form}
-        layout="vertical"
-        preserve={false}
-        scrollToFirstError={true}
-      >
+      <Form form={form} layout="vertical" scrollToFirstError={true}>
         <Divider plain orientation="left">
           Personal Information
         </Divider>
@@ -102,7 +100,14 @@ const CandidateFormModal = ({
             <Form.Item
               name="fullName"
               label="Full Name"
-              rules={[{ required: true, message: "Please enter full name" }]}
+              rules={[
+                { required: true, message: "Please enter full name" },
+                { min: 3, message: "Name must be at least 3 characters long." },
+                {
+                  max: 100,
+                  message: "Name can't be longer than 100 characters.",
+                },
+              ]}
             >
               <Input placeholder="Gaurav Shrestha" />
             </Form.Item>
@@ -126,9 +131,30 @@ const CandidateFormModal = ({
             <Form.Item
               name="phoneNumber"
               label="Phone Number"
-              rules={[{ required: true, message: "Please enter phone number" }]}
+              rules={[
+                {
+                  validator(_, value) {
+                    if (!value) {
+                      return Promise.reject(
+                        new Error("Please enter phone number")
+                      );
+                    }
+                    if (!/^\d+$/.test(value)) {
+                      return Promise.reject(
+                        new Error("Phone number must contain only digits")
+                      );
+                    }
+                    if (value.length !== 10) {
+                      return Promise.reject(
+                        new Error("Phone number must be exactly 10 digits")
+                      );
+                    }
+                    return Promise.resolve();
+                  },
+                },
+              ]}
             >
-              <Input placeholder="98xxxxxxxx" />
+              <Input placeholder="98xxxxxxxx" maxLength={10} />
             </Form.Item>
           </Col>
           <Col span={12}>
@@ -193,9 +219,27 @@ const CandidateFormModal = ({
             <Form.Item
               name="experience"
               label="Experience (Years)"
-              rules={[{ required: true, message: "Please enter experience" }]}
+              rules={[
+                {
+                  required: true,
+                  message: "Please enter years of experience",
+                },
+                {
+                  validator: (_, value) => {
+                    if (value && !/^\d*\.?\d+$/.test(value)) {
+                      return Promise.reject(
+                        "Must be a valid number (e.g., 2 or 2.5)"
+                      );
+                    }
+                    if (value && parseFloat(value) < 0) {
+                      return Promise.reject("Experience cannot be negative");
+                    }
+                    return Promise.resolve();
+                  },
+                },
+              ]}
             >
-              <Input placeholder="e.g., 5 years" />
+              <Input placeholder="e.g., 5" type="number" step="0.5" min="0" />
             </Form.Item>
           </Col>
           <Col span={12}>
@@ -252,9 +296,24 @@ const CandidateFormModal = ({
         <Divider plain orientation="left">
           Additional Information
         </Divider>
-        <Form.Item name="notes" label="Notes">
+        <Form.Item
+          name="notes"
+          label="Notes"
+          rules={[
+            {
+              validator: (_, value) =>
+                value && value.length > 150
+                  ? Promise.reject("Notes cannot exceed 150 characters")
+                  : Promise.resolve(),
+            },
+          ]}
+        >
           <Input.TextArea
             rows={4}
+            maxLength={150}
+            showCount={{
+              formatter: ({ count, maxLength }) => `${count}/${maxLength}`,
+            }}
             placeholder="Any additional notes about the candidate..."
           />
         </Form.Item>

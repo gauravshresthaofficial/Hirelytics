@@ -106,15 +106,14 @@ const deleteAssessment = async (req, res) => {
       return res.status(404).json({ message: "Assessment not found" });
     }
 
-
     await Assessment.deleteOne({ _id: req.params.id });
     res.status(200).json({
       message: "Assessment deleted successfully",
       deletedAssessment: assessment,
     });
   } catch (error) {
-    console.error(error);
     res.status(500).json({ message: "Server error" });
+    console.error(error);
   }
 };
 

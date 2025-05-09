@@ -38,7 +38,7 @@ const CandidateOffer = ({ candidate, positions }) => {
       form.resetFields();
     } catch (error) {
       console.error("Offer failed:", error);
-      message.error("Failed to Offer candidate");
+      message.error(error || "Failed to Offer candidate");
     } finally {
       setLoading(false);
     }
@@ -84,11 +84,30 @@ const CandidateOffer = ({ candidate, positions }) => {
           <Form.Item
             name="salary"
             label="Salary"
-            rules={[{ required: true, message: "Please enter the salary" }]}
+            rules={[
+              {
+                required: true,
+                message: "Please input the salary",
+              },
+              {
+                type: "number",
+                message: "Salary must be a valid number",
+              },
+              {
+                validator: (_, value) =>
+                  value > 0
+                    ? Promise.resolve()
+                    : Promise.reject("Salary must be greater than 0"),
+              },
+            ]}
           >
             <InputNumber
               placeholder="Salary in Rs."
               style={{ width: "100%" }}
+              formatter={(value) =>
+                `NRP ${value}`.replace(/\B(?=(\d{3})+(?!\d))/g, ",")
+              }
+              parser={(value) => value.replace(/\s?NRP\s?|,/g, "")}
             />
           </Form.Item>
           <Form.Item

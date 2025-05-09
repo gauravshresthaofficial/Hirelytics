@@ -30,6 +30,7 @@ const EvaluateAssessmentModal = ({
       form.resetFields();
     } catch (err) {
       message.error("Failed to submit evaluation.");
+      console.error(err);
     }
   };
 
@@ -42,9 +43,9 @@ const EvaluateAssessmentModal = ({
         form
           .validateFields()
           .then(handleEvaluation)
-          .catch((info) => console.error("Validation Failed:", info));
+          .catch(() => console.error("Validation Failed"));
       }}
-      okText="Submit Evaluation"
+      okText="Submit"
       centered
       width={600}
     >
@@ -53,13 +54,28 @@ const EvaluateAssessmentModal = ({
           name="score"
           label="Score"
           style={{ flex: 1 }}
-          rules={[{ required: true, message: "Please enter a score" }]}
+          rules={[
+            { required: true, message: "Please enter a score" },
+            { type: "number", message: "Invalid number format" },
+            {
+              validator: (_, value) => {
+                const maxScore = assessment?.maxScore || 100;
+                if (value <= 0) {
+                  return Promise.reject("Score must be greater than 0");
+                }
+                if (value > maxScore) {
+                  return Promise.reject(`Score cannot exceed ${maxScore}`);
+                }
+                return Promise.resolve();
+              },
+            },
+          ]}
         >
           <InputNumber
             min={0}
             max={assessment?.maxScore}
             style={{ width: "100%" }}
-            placeholder={`Enter score (Max: ${assessment?.maxScore})`}
+            placeholder={`Enter score (Max: ${assessment?.maxScore || 100})`}
           />
         </Form.Item>
 

@@ -76,24 +76,12 @@ const InterviewDetail = () => {
       message.success("Interview deleted successfully!");
       navigate("/interviews");
     } catch (err) {
-      message.error("Failed to delete interview.");
+      message.error(err || "Failed to delete interview.");
     }
   };
 
   if (loading) {
-    return (
-      <div
-        style={{
-          display: "flex",
-          justifyContent: "center",
-          padding: "2rem",
-          width: "100%",
-          height: "100%",
-        }}
-      >
-        <Spin size="large" />
-      </div>
-    );
+    return <Spin tip="Loading dashboard data..." fullscreen />;
   }
 
   if (!selectedInterview) {

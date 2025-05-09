@@ -8,6 +8,7 @@ import {
   Space,
   Select,
   Typography,
+  message,
 } from "antd";
 import {
   SearchOutlined,
@@ -30,11 +31,17 @@ const PositionPage = () => {
   const navigate = useNavigate();
   const dispatch = useDispatch();
 
-  const positions = useSelector((state) => state.positions.data || []);
+  const { data: positions, error } = useSelector((state) => state.positions);
 
   useEffect(() => {
     dispatch(fetchPositions());
   }, [dispatch]);
+
+  useEffect(() => {
+    if (error) {
+      message.error(error);
+    }
+  }, [error]);
 
   // Extract unique department names for filters
   const departmentOptions = [

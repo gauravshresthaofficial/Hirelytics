@@ -33,6 +33,7 @@ import { useDispatch, useSelector } from "react-redux";
 import EvaluatorFormModal from "../components/evaluators/EvaluatorModalForm";
 import { fetchCandidates } from "../features/candidate/candidateSlice";
 import { fetchUsers, updateUser } from "../features/user/userSlice";
+import NotFoundPage from "../components/NotFoundPage";
 
 const { Title, Text } = Typography;
 
@@ -80,38 +81,6 @@ const EvaluatorDetail = () => {
     );
     setSelectedEvaluator(current);
   }, [users, id]);
-
-  const handleEdit = (record) => {
-    setIsEditing(true);
-    setEditingEvaluator(record);
-    form.setFieldsValue(record);
-    setIsModalOpen(true);
-  };
-
-  const handleDelete = async (id) => {
-    try {
-      //   await dispatch(deleteUs(id)).unwrap();
-      message.success("Evaluator deleted successfully!");
-      navigate("/evaluators");
-    } catch (err) {
-      message.error("Failed to delete evaluator.");
-    }
-  };
-
-  const handleUpdate = async (values) => {
-    try {
-      await dispatch(
-        updateUser({ id: editingEvaluator._id, updatedData: values })
-      ).unwrap();
-      message.success("Evaluator updated successfully!");
-      setIsModalOpen(false);
-      setIsEditing(false);
-      setEditingEvaluator(null);
-      form.resetFields();
-    } catch (err) {
-      message.error("Failed to update evaluator.");
-    }
-  };
 
   // Get candidates assigned to this evaluator for assessments or interviews
   const getAssociatedCandidates = () => {
@@ -224,9 +193,8 @@ const EvaluatorDetail = () => {
       title: "Candidate",
       dataIndex: "fullName",
       key: "fullName",
-      render: (text, record) => (
+      render: (text) => (
         <Space>
-          <Avatar src={record.picture} icon={<UserOutlined />} />
           <Text>{text}</Text>
         </Space>
       ),
@@ -383,24 +351,11 @@ const EvaluatorDetail = () => {
   };
 
   if (loading) {
-    return (
-      <div
-        style={{ display: "flex", justifyContent: "center", padding: "2rem" }}
-      >
-        <Spin size="large" />
-      </div>
-    );
+    return <Spin tip="Loading dashboard data..." fullscreen />;
   }
 
   if (!selectedEvaluator) {
-    return (
-      <div style={{ textAlign: "center", padding: "2rem" }}>
-        <Title level={4}>Evaluator not found</Title>
-        <Button type="primary" onClick={() => navigate(-1)}>
-          Go Back
-        </Button>
-      </div>
-    );
+    return <NotFoundPage />;
   }
 
   return (
@@ -435,7 +390,7 @@ const EvaluatorDetail = () => {
               >
                 Edit
               </EvaluatorFormModal>
-              <Popconfirm
+              {/* <Popconfirm
                 title="Are you sure you want to delete this evaluator?"
                 onConfirm={() => handleDelete(selectedEvaluator._id)}
                 okText="Yes"
@@ -445,7 +400,7 @@ const EvaluatorDetail = () => {
                 <Button icon={<DeleteOutlined />} danger>
                   Delete
                 </Button>
-              </Popconfirm>
+              </Popconfirm> */}
             </Space>
           </Flex>
         }
@@ -457,13 +412,12 @@ const EvaluatorDetail = () => {
             {selectedEvaluator.email}
           </Descriptions.Item>
           <Descriptions.Item label={<Text strong>Role</Text>}>
-            <Tag color="blue">{selectedEvaluator.role}</Tag>
+            <Tag color="blue">
+              {" "}
+              {selectedEvaluator.role.charAt(0).toUpperCase() +
+                selectedEvaluator.role.slice(1)}
+            </Tag>
           </Descriptions.Item>
-          {selectedEvaluator.googleId && (
-            <Descriptions.Item label={<Text strong>Google ID</Text>}>
-              {selectedEvaluator.googleId}
-            </Descriptions.Item>
-          )}
         </Descriptions>
       </Card>
 

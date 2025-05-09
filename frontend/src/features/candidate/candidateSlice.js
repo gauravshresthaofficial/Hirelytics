@@ -1,20 +1,9 @@
 import { createSlice, createAsyncThunk } from "@reduxjs/toolkit";
 import api from "../../api/api";
 
-const errorResponse = (error) => {
-  return {
-    message: error.message,
-    status: error.response?.status,
-    data: error.response?.data || error.message,
-  };
-};
-
-
 const determineOverallStatus = (candidate) => {
-  
   return candidate.currentStatus || "Pending";
 };
-
 
 export const fetchCandidates = createAsyncThunk(
   "candidates/fetchCandidates",
@@ -23,11 +12,12 @@ export const fetchCandidates = createAsyncThunk(
       const response = await api.get("/candidates");
       return response.data.data;
     } catch (error) {
-      return rejectWithValue(errorResponse(error));
+      return rejectWithValue(
+        error.response?.data?.error || "Failed to fetch data"
+      );
     }
   }
 );
-
 
 export const createCandidate = createAsyncThunk(
   "candidates/createCandidate",
@@ -36,11 +26,12 @@ export const createCandidate = createAsyncThunk(
       const response = await api.post("/candidates", candidateData);
       return response.data;
     } catch (error) {
-      return rejectWithValue(errorResponse(error));
+      return rejectWithValue(
+        error.response?.data?.error || "Failed to create a candidate"
+      );
     }
   }
 );
-
 
 export const updateCandidate = createAsyncThunk(
   "candidates/updateCandidate",
@@ -49,11 +40,12 @@ export const updateCandidate = createAsyncThunk(
       const response = await api.put(`/candidates/${id}`, updatedData);
       return response.data.data;
     } catch (error) {
-      return rejectWithValue(errorResponse(error));
+      return rejectWithValue(
+        error.response?.data?.error || "Failed to delete a candidate"
+      );
     }
   }
 );
-
 
 export const deleteCandidate = createAsyncThunk(
   "candidates/deleteCandidate",
@@ -62,11 +54,12 @@ export const deleteCandidate = createAsyncThunk(
       const response = await api.delete(`/candidates/${id}`);
       return response.data;
     } catch (error) {
-      return rejectWithValue(errorResponse(error));
+      return rejectWithValue(
+        error.response?.data?.error || "Failed to delete a candidate"
+      );
     }
   }
 );
-
 
 export const fetchCandidateById = createAsyncThunk(
   "candidates/fetchCandidateById",
@@ -75,11 +68,12 @@ export const fetchCandidateById = createAsyncThunk(
       const response = await api.get(`/candidates/${id}`);
       return response.data.data;
     } catch (error) {
-      return rejectWithValue(errorResponse(error));
+      return rejectWithValue(
+        error.response?.data?.error || "Failed to fetch candidate"
+      );
     }
   }
 );
-
 
 export const addAssessmentToCandidate = createAsyncThunk(
   "candidates/addAssessmentToCandidate",
@@ -91,12 +85,13 @@ export const addAssessmentToCandidate = createAsyncThunk(
       );
       return response.data.data;
     } catch (error) {
-      ("error from add:", error);
-      return rejectWithValue(errorResponse(error));
+      console.log(error);
+      return rejectWithValue(
+        error.response?.data?.error || "Failed to add assessment"
+      );
     }
   }
 );
-
 
 export const completeCandidateAssessment = createAsyncThunk(
   "candidates/completeCandidateAssessment",
@@ -107,11 +102,12 @@ export const completeCandidateAssessment = createAsyncThunk(
       );
       return response.data;
     } catch (error) {
-      return rejectWithValue(errorResponse(error));
+      return rejectWithValue(
+        error.response?.data?.error || "Failed to update a candidate assessment"
+      );
     }
   }
 );
-
 
 export const updateCandidateAssessment = createAsyncThunk(
   "candidates/updateCandidateAssessment",
@@ -124,14 +120,15 @@ export const updateCandidateAssessment = createAsyncThunk(
         `/candidates/${candidateId}/assessments/${assessmentId}`,
         assessmentData
       );
-      (response.data.data);
+      response.data.data;
       return response.data.data;
     } catch (error) {
-      return rejectWithValue(errorResponse(error));
+      return rejectWithValue(
+        error.response?.data?.error || "Failed to update a candidate assessment"
+      );
     }
   }
 );
-
 
 export const addInterviewToCandidate = createAsyncThunk(
   "candidates/addInterviewToCandidate",
@@ -143,12 +140,12 @@ export const addInterviewToCandidate = createAsyncThunk(
       );
       return response.data.data;
     } catch (error) {
-      ("add interveiw", error);
-      return rejectWithValue(errorResponse(error));
+      return rejectWithValue(
+        error.response?.data?.error || "Failed to Schedule interview"
+      );
     }
   }
 );
-
 
 export const completeCandidateInterview = createAsyncThunk(
   "candidates/completeCandidateInterview",
@@ -159,11 +156,12 @@ export const completeCandidateInterview = createAsyncThunk(
       );
       return response.data;
     } catch (error) {
-      return rejectWithValue(errorResponse(error));
+      return rejectWithValue(
+        error.response?.data?.error || "Failed to update a candidate interview"
+      );
     }
   }
 );
-
 
 export const updateCandidateInterview = createAsyncThunk(
   "candidates/updateCandidateInterview",
@@ -175,11 +173,12 @@ export const updateCandidateInterview = createAsyncThunk(
       );
       return response.data.data;
     } catch (error) {
-      return rejectWithValue(errorResponse(error));
+      return rejectWithValue(
+        error.response?.data?.error || "Failed to update a candidate interview"
+      );
     }
   }
 );
-
 
 export const updateCandidateStatus = createAsyncThunk(
   "candidates/updateCandidateStatus",
@@ -190,11 +189,12 @@ export const updateCandidateStatus = createAsyncThunk(
       });
       return response.data.data;
     } catch (error) {
-      return rejectWithValue(errorResponse(error));
+      return rejectWithValue(
+        error.response?.data?.error || "Failed to update a candidate status"
+      );
     }
   }
 );
-
 
 export const makeOfferToCandidate = createAsyncThunk(
   "candidates/makeOfferToCandidate",
@@ -206,11 +206,12 @@ export const makeOfferToCandidate = createAsyncThunk(
       );
       return response.data.data;
     } catch (error) {
-      return rejectWithValue(errorResponse(error));
+      return rejectWithValue(
+        error.response?.data?.error || "Failed to offer a candidate"
+      );
     }
   }
 );
-
 
 export const updateOfferStatus = createAsyncThunk(
   "candidates/updateOfferStatus",
@@ -222,12 +223,11 @@ export const updateOfferStatus = createAsyncThunk(
       return response.data.data;
     } catch (error) {
       return rejectWithValue(
-        error.response?.data?.message || "Failed to update offer status"
+        error.response?.data?.error || "Failed to update offer status"
       );
     }
   }
 );
-
 
 export const hireCandidate = createAsyncThunk(
   "candidates/hireCandidate",
@@ -240,12 +240,11 @@ export const hireCandidate = createAsyncThunk(
       return response.data.data;
     } catch (error) {
       return rejectWithValue(
-        error.response?.data?.message || "Failed to hire candidate"
+        error.response?.data?.error || "Failed to hire candidate"
       );
     }
   }
 );
-
 
 export const rejectCandidate = createAsyncThunk(
   "candidates/rejectCandidate",
@@ -258,7 +257,7 @@ export const rejectCandidate = createAsyncThunk(
       return response.data.data;
     } catch (error) {
       return rejectWithValue(
-        error.response?.data?.message || "Failed to reject candidate"
+        error.response?.data?.error || "Failed to reject candidate"
       );
     }
   }
@@ -280,7 +279,7 @@ const candidateSlice = createSlice({
   reducers: {},
   extraReducers: (builder) => {
     builder
-      
+
       .addCase(fetchCandidates.pending, (state) => {
         state.loading = true;
         state.error = null;
@@ -300,7 +299,7 @@ const candidateSlice = createSlice({
         const index = state.data.findIndex(
           (candidate) => candidate._id === action.payload._id
         );
-        (action.payload);
+        action.payload;
         if (index !== -1) {
           state.data[index] = action.payload;
         }
@@ -401,7 +400,7 @@ const candidateSlice = createSlice({
           state.data[candidateIndex] = action.payload;
         }
       })
-      
+
       .addCase(completeCandidateAssessment.pending, (state) => {
         state.completingAssessment = true;
         state.completeAssessmentError = null;
@@ -438,7 +437,7 @@ const candidateSlice = createSlice({
         state.completingAssessment = false;
         state.completeAssessmentError = action.payload || action.error;
       })
-      
+
       .addCase(completeCandidateInterview.pending, (state) => {
         state.completingInterview = true;
         state.completeInterviewError = null;

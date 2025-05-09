@@ -61,7 +61,6 @@ const AssessmentTable = ({ data, loading }) => {
     },
   ];
 
-
   return (
     <Table
       columns={columns}

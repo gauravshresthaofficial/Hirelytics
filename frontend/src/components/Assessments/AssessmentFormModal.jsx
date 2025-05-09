@@ -38,7 +38,7 @@ const AssessmentFormModal = ({ isEditing, initialValues }) => {
       setIsModalOpen(false);
       form.resetFields();
     } catch (err) {
-      message.error(err?.message || "Failed to save assessment.");
+      message.error(err || "Failed to save assessment.");
     } finally {
       setLoading(false);
     }
@@ -56,23 +56,30 @@ const AssessmentFormModal = ({ isEditing, initialValues }) => {
           icon={isEditing ? <EditOutlined /> : <PlusCircleOutlined />}
           onClick={() => setIsModalOpen(true)}
         >
-          {isEditing ? "Edit" : "Create Assessment"}
+          {isEditing ? "Edit" : "Add Assessment"}
         </Button>
       )}
 
       <Modal
-        title={isEditing ? "Edit Assessment" : "Create Assessment"}
+        title={isEditing ? "Edit Assessment" : "Add Assessment"}
         open={isModalOpen}
         onCancel={handleCancel}
         onOk={handleSubmit}
         confirmLoading={loading}
-        okText={isEditing ? "Update" : "Create"}
+        okText={isEditing ? "Update" : "Submit"}
       >
         <Form form={form} layout="vertical">
           <Form.Item
             name="assessmentName"
             label="Assessment Name"
-            rules={[{ required: true, message: "Please enter the name!" }]}
+            rules={[
+              { required: true, message: "Please enter the name!" },
+              { min: 3, message: "Name must be at least 3 characters long." },
+              {
+                max: 100,
+                message: "Name can't be longer than 100 characters.",
+              },
+            ]}
           >
             <Input placeholder="Enter assessment name" />
           </Form.Item>
@@ -80,7 +87,18 @@ const AssessmentFormModal = ({ isEditing, initialValues }) => {
           <Form.Item
             name="description"
             label="Description"
-            rules={[{ required: true, message: "Please enter a description!" }]}
+            rules={[
+              { required: true, message: "Please enter a description!" },
+              { max: 500, message: "Description can't exceed 500 characters." },
+              {
+                validator: (_, value) =>
+                  value?.trim()
+                    ? Promise.resolve()
+                    : Promise.reject(
+                        "Description cannot be empty or whitespace."
+                      ),
+              },
+            ]}
           >
             <Input.TextArea placeholder="Enter description" />
           </Form.Item>
@@ -88,7 +106,21 @@ const AssessmentFormModal = ({ isEditing, initialValues }) => {
           <Form.Item
             name="maxScore"
             label="Max Score"
-            rules={[{ required: true, message: "Please enter the max score!" }]}
+            rules={[
+              { required: true, message: "Please enter the max score!" },
+              {
+                type: "number",
+                min: 1,
+                max: 1000,
+                message: "Score must be between 1 and 1000.",
+              },
+              {
+                validator: (_, value) =>
+                  Number.isInteger(value)
+                    ? Promise.resolve()
+                    : Promise.reject("Max score must be an integer."),
+              },
+            ]}
           >
             <InputNumber
               style={{ width: "100%" }}
@@ -99,7 +131,21 @@ const AssessmentFormModal = ({ isEditing, initialValues }) => {
           <Form.Item
             name="duration"
             label="Duration (minutes)"
-            rules={[{ required: true, message: "Please enter the duration!" }]}
+            rules={[
+              { required: true, message: "Please enter the duration!" },
+              {
+                type: "number",
+                min: 5,
+                max: 300,
+                message: "Duration must be between 5 and 300 minutes.",
+              },
+              {
+                validator: (_, value) =>
+                  Number.isInteger(value)
+                    ? Promise.resolve()
+                    : Promise.reject("Duration must be an integer."),
+              },
+            ]}
           >
             <InputNumber
               style={{ width: "100%" }}

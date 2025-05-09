@@ -23,6 +23,10 @@ const GlobalSearch = () => {
   const interviews = useSelector((state) => state.interviews.data || []);
   const assessments = useSelector((state) => state.assessments.data || []);
   const positions = useSelector((state) => state.positions.data || []);
+  const users = useSelector((state) => state.users.data || []);
+  const evaluators = users.filter(
+    (user) => user.role.toLowerCase() == "evaluator"
+  );
 
   const filteredOptions = useMemo(() => {
     if (!query) return [];
@@ -56,6 +60,7 @@ const GlobalSearch = () => {
       "assessment"
     );
     const positionMatches = filterList(positions, "positionName", "position");
+    const evaluatorMatches = filterList(evaluators, "fullName", "evaluator");
 
     if (candidateMatches.length)
       groupedOptions.push({ label: "Candidates", options: candidateMatches });
@@ -68,9 +73,11 @@ const GlobalSearch = () => {
 
     if (positionMatches.length)
       groupedOptions.push({ label: "Positions", options: positionMatches });
+    if (evaluatorMatches.length)
+      groupedOptions.push({ label: "Evaluators", options: evaluatorMatches });
 
     return groupedOptions;
-  }, [query, candidates, interviews, assessments, positions]);
+  }, [query, candidates, interviews, assessments, positions, evaluators]);
 
   const handleSelect = (value) => {
     const [type, id] = value.split("-");
@@ -79,6 +86,7 @@ const GlobalSearch = () => {
       interview: "/interviews/",
       assessment: "/assessments/",
       position: "/positions/",
+      evaluator: "/evaluators/",
     };
     navigate(`${pathMap[type]}${id}`);
     setQuery("");

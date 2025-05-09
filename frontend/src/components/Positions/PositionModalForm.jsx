@@ -66,7 +66,7 @@ const PositionFormModal = ({ isEditing, initialValues }) => {
       setIsModalOpen(false);
     } catch (err) {
       console.error("Submit failed:", err);
-      message.error(err?.message || "Failed to save position.");
+      message.error(err || "Failed to save position.");
     } finally {
       setLoading(false);
     }
@@ -84,18 +84,18 @@ const PositionFormModal = ({ isEditing, initialValues }) => {
           icon={isEditing ? <EditOutlined /> : <PlusCircleOutlined />}
           onClick={() => setIsModalOpen(true)}
         >
-          {isEditing ? "Edit" : "Create Position"}
+          {isEditing ? "Edit" : "Add Position"}
         </Button>
       )}
 
       <Modal
         open={isModalOpen}
-        title={isEditing ? "Edit Position" : "Create Position"}
+        title={isEditing ? "Edit Position" : "Add Position"}
         onCancel={handleCancel}
         onOk={handleSubmit}
         confirmLoading={loading}
-        okText={isEditing ? "Update" : "Create"}
         destroyOnClose
+        width="50vw"
         styles={{
           body: {
             height: "60vh",
@@ -108,7 +108,7 @@ const PositionFormModal = ({ isEditing, initialValues }) => {
           <Flex justify="flex-end" gap="small" style={{ padding: "16px 24px" }}>
             <Button onClick={handleCancel}>Cancel</Button>
             <Button type="primary" onClick={handleSubmit} loading={loading}>
-              {isEditing ? "Update" : "Create"}
+              {isEditing ? "Update" : "Submit"}
             </Button>
           </Flex>
         }
@@ -119,6 +119,16 @@ const PositionFormModal = ({ isEditing, initialValues }) => {
             label="Position Name"
             rules={[
               { required: true, message: "Please input the position name!" },
+              {
+                validator: (_, value) => {
+                  if (!value || value.length >= 3) {
+                    return Promise.resolve();
+                  }
+                  return Promise.reject(
+                    new Error("Name should be at least 3 characters long")
+                  );
+                },
+              },
             ]}
           >
             <Input />
@@ -142,16 +152,52 @@ const PositionFormModal = ({ isEditing, initialValues }) => {
             </Select>
           </Form.Item>
 
-          <Form.Item name="requiredSkills" label="Required Skills">
-            <Input />
+          <Form.Item
+            name="requiredSkills"
+            label="Required Skills"
+            rules={[
+              { required: true, message: "Please enter required skills" },
+              { max: 500, message: "Max 500 characters allowed" },
+            ]}
+          >
+            <Input.TextArea
+              placeholder="e.g., React, Node.js, MongoDB"
+              rows={3}
+              showCount
+              maxLength={500}
+            />
           </Form.Item>
 
-          <Form.Item name="responsibilities" label="Responsibilities">
-            <Input />
+          <Form.Item
+            name="responsibilities"
+            label="Responsibilities"
+            rules={[
+              { required: true, message: "Please enter responsibilities" },
+              { max: 1000, message: "Max 1000 characters allowed" },
+            ]}
+          >
+            <Input.TextArea
+              placeholder="List key job responsibilities"
+              rows={4}
+              showCount
+              maxLength={1000}
+            />
           </Form.Item>
 
-          <Form.Item name="qualifications" label="Qualifications">
-            <Input />
+          <Form.Item
+            name="qualifications"
+            label="Qualifications"
+            rules={[
+              { required: true, message: "Please enter qualifications" },
+              { max: 1000, message: "Max 1000 characters allowed" },
+            ]}
+          >
+            <Input.TextArea
+              placeholder="e.g., Bachelor's degree in Computer Science"
+              rows={4}
+              showCount
+              maxLength={1000}
+            />
           </Form.Item>
 
           <Form.Item label="Salary Range" required>
@@ -161,12 +207,16 @@ const PositionFormModal = ({ isEditing, initialValues }) => {
                   name={["salaryRange", "min"]}
                   rules={[
                     { required: true, message: "Minimum salary is required" },
+                    {
+                      type: "number",
+                      min: 0,
+                      message: "Minimum salary must be at least 0",
+                    },
                   ]}
                 >
                   <InputNumber
                     style={{ width: "100%" }}
                     placeholder="Min"
-                    min={0}
                     addonBefore="Min"
                   />
                 </Form.Item>
@@ -174,14 +224,27 @@ const PositionFormModal = ({ isEditing, initialValues }) => {
               <Col span={12}>
                 <Form.Item
                   name={["salaryRange", "max"]}
+                  dependencies={["salaryRange", "min"]}
                   rules={[
                     { required: true, message: "Maximum salary is required" },
+                    ({ getFieldValue }) => ({
+                      validator(_, value) {
+                        const min = getFieldValue(["salaryRange", "min"]);
+                        if (value >= min) {
+                          return Promise.resolve();
+                        }
+                        return Promise.reject(
+                          new Error(
+                            "Maximum salary must be greater than or equal to minimum salary"
+                          )
+                        );
+                      },
+                    }),
                   ]}
                 >
                   <InputNumber
                     style={{ width: "100%" }}
                     placeholder="Max"
-                    min={0}
                     addonBefore="Max"
                   />
                 </Form.Item>

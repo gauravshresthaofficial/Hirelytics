@@ -73,18 +73,12 @@ const PositionDetail = () => {
       message.success("Position deleted successfully!");
       navigate("/positions");
     } catch (err) {
-      message.error("Failed to delete position.");
+      message.error(err || "Failed to delete position.");
     }
   };
 
   if (loading) {
-    return (
-      <div
-        style={{ display: "flex", justifyContent: "center", padding: "2rem" }}
-      >
-        <Spin size="large" />
-      </div>
-    );
+    return <Spin tip="Loading dashboard data..." fullscreen />;
   }
 
   if (!selectedPosition) {

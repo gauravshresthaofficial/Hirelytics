@@ -62,13 +62,15 @@ const AssignAssessmentModal = ({ candidate }) => {
     };
 
     try {
-      await dispatch(addAssessmentToCandidate({ candidateId, assessmentData }));
+      await dispatch(
+        addAssessmentToCandidate({ candidateId, assessmentData })
+      ).unwrap();
       message.success("Assessment assigned successfully!");
       setVisible(false);
       form.resetFields();
       setSelectedCandidateId(null);
     } catch (error) {
-      message.error("Failed to assign assessment.");
+      message.error(error || "Failed to assign assessment.");
     }
   };
 
@@ -102,11 +104,18 @@ const AssignAssessmentModal = ({ candidate }) => {
               }
               handleSubmit(values);
             })
-            .catch((err) => {
-              console.error("Validation failed:", err);
+            .catch((error) => {
+              if (error.errorFields && error.errorFields.length > 0) {
+                const firstErrorMsg = error.errorFields[0].errors[0];
+                message.error(firstErrorMsg);
+              } else {
+                message.error("Validation Error.");
+              }
+              console.error("Validation Failed:", error);
             });
         }}
         centered
+        okText={"Submit"}
       >
         <Form
           form={form}

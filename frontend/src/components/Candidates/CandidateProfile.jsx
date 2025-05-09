@@ -1,10 +1,9 @@
 import React from "react";
 import { Card, Descriptions, Space, Divider, Tag } from "antd";
 import { ClockCircleOutlined, IdcardOutlined } from "@ant-design/icons";
+import dayjs from "dayjs";
 
 const CandidateProfile = ({ candidate }) => {
-  const NEPAL_TIMEZONE = "Asia/Kathmandu";
-
   return (
     <Space direction="vertical" style={{ width: "100%" }}>
       <Divider orientation="left" plain>
@@ -32,7 +31,9 @@ const CandidateProfile = ({ candidate }) => {
             </Space>
           </Descriptions.Item>
         )}
-        <Descriptions.Item label="Remark">{candidate.notes}</Descriptions.Item>
+        <Descriptions.Item label="Remark">
+          {candidate.notes ? candidate.notes : "-"}
+        </Descriptions.Item>
         <Descriptions.Item label="Source">{candidate.source}</Descriptions.Item>
       </Descriptions>
       <Divider orientation="left" plain>
@@ -59,7 +60,8 @@ const CandidateProfile = ({ candidate }) => {
             </Space>
           }
         >
-          {candidate.applicationDate || "Not specified"}
+          {dayjs(candidate.applicationDate).format("MMMM D, YYYY") ||
+            "Not specified"}
         </Descriptions.Item>
       </Descriptions>
     </Space>

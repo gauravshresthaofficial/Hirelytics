@@ -8,11 +8,13 @@ import {
   DatePicker,
   InputNumber,
   message,
+  Tag,
 } from "antd";
 import {
   hireCandidate,
   rejectCandidate,
 } from "../../features/candidate/candidateSlice";
+import moment from "moment";
 
 const { TextArea } = Input;
 
@@ -45,7 +47,7 @@ const CandidateHireRejectModal = ({ candidate, positionId }) => {
       setHireModalVisible(false);
       hireForm.resetFields();
     } catch (error) {
-      message.error("Failed to hire candidate");
+      message.error(error || "Failed to hire candidate");
       console.error(error);
     } finally {
       setLoading(false);
@@ -68,7 +70,7 @@ const CandidateHireRejectModal = ({ candidate, positionId }) => {
       setRejectModalVisible(false);
       rejectForm.resetFields();
     } catch (error) {
-      message.error("Failed to reject candidate");
+      message.error(error || "Failed to reject candidate");
       console.error(error);
     } finally {
       setLoading(false);
@@ -78,11 +80,7 @@ const CandidateHireRejectModal = ({ candidate, positionId }) => {
   return (
     <>
       {candidate.currentStatus === "Offer Accepted" && (
-        <Button
-          type="primary"
-          style={{ marginRight: 8 }}
-          onClick={() => setHireModalVisible(true)}
-        >
+        <Button type="primary" onClick={() => setHireModalVisible(true)}>
           Hire Candidate
         </Button>
       )}
@@ -96,6 +94,7 @@ const CandidateHireRejectModal = ({ candidate, positionId }) => {
             Reject Candidate
           </Button>
         )}
+      {candidate.currentStatus === "Hired" && <Tag color="success">Hired</Tag>}
 
       {/* Hire Modal */}
       <Modal
@@ -110,26 +109,63 @@ const CandidateHireRejectModal = ({ candidate, positionId }) => {
         okText="Confirm Hire"
       >
         <Form form={hireForm} layout="vertical">
-          <Form.Item
-            name="agreedSalary"
-            label="Agreed Salary"
-            rules={[{ required: true, message: "Please input the salary" }]}
-          >
-            <InputNumber
-              style={{ width: "100%" }}
-              min={0}
-              formatter={(value) =>
-                `NRP ${value}`.replace(/\B(?=(\d{3})+(?!\d))/g, ",")
-              }
-              parser={(value) => value.replace(/\s?NRP\s?|,/g, "")}
-            />
-          </Form.Item>
+          <Form form={hireForm} layout="vertical">
+            <Form.Item
+              name="agreedSalary"
+              label="Agreed Salary"
+              rules={[
+                {
+                  required: true,
+                  message: "Please input the salary",
+                },
+                {
+                  type: "number",
+                  message: "Salary must be a valid number",
+                },
+                {
+                  validator: (_, value) =>
+                    value > 0
+                      ? Promise.resolve()
+                      : Promise.reject("Salary must be greater than 0"),
+                },
+              ]}
+            >
+              <InputNumber
+                style={{ width: "100%" }}
+                min={1}
+                precision={2}
+                step={1000}
+                formatter={(value) =>
+                  `NRP ${value}`.replace(/\B(?=(\d{3})+(?!\d))/g, ",")
+                }
+                parser={(value) => value.replace(/\s?NRP\s?|,/g, "")}
+              />
+            </Form.Item>
+          </Form>
           <Form.Item
             name="startDate"
             label="Start Date"
-            rules={[{ required: true, message: "Please select start date" }]}
+            rules={[
+              {
+                required: true,
+                message: "Please select start date",
+              },
+              {
+                validator: (_, value) => {
+                  if (value && moment(value).isSameOrBefore(moment(), "day")) {
+                    return Promise.reject("Start date must be in the future");
+                  }
+                  return Promise.resolve();
+                },
+              },
+            ]}
           >
-            <DatePicker style={{ width: "100%" }} />
+            <DatePicker
+              style={{ width: "100%" }}
+              disabledDate={(current) =>
+                current && current.isSameOrBefore(moment().endOf("day"))
+              }
+            />
           </Form.Item>
         </Form>
       </Modal>
@@ -155,6 +191,7 @@ const CandidateHireRejectModal = ({ candidate, positionId }) => {
           >
             <TextArea
               rows={4}
+              maxLength={150}
               placeholder="Explain why the candidate is being rejected"
             />
           </Form.Item>

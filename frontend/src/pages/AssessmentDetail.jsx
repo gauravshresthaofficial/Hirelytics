@@ -33,6 +33,7 @@ import AssessmentFormModal from "../components/Assessments/AssessmentFormModal";
 import AssessmentCandidatesTable from "../components/Assessments/AssessmentCandidatesTable";
 import AssessmentStatistics from "../components/Assessments/AssessmentStatistics";
 import NotFoundPage from "../components/NotFoundPage";
+import Loading from "../components/Loading";
 
 const { Title, Text } = Typography;
 
@@ -92,13 +93,7 @@ const AssessmentDetail = () => {
   };
 
   if (loading) {
-    return (
-      <div
-        style={{ display: "flex", justifyContent: "center", padding: "2rem" }}
-      >
-        <Spin size="large" />
-      </div>
-    );
+    return <Loading />;
   }
 
   if (!selectedAssessment) {

@@ -27,7 +27,7 @@ const createUser = async (req, res) => {
   const { fullName, email, role, picture } = req.body;
 
   try {
-    if (!fullName || !email || !role) {
+    if (!fullName || !email) {
       return res.status(400).json({ message: "All fields are required" });
     }
 

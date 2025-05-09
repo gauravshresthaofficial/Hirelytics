@@ -25,9 +25,6 @@ const InterviewTable = ({ interviews }) => {
   const [searchText, setSearchText] = useState("");
   const [filterMode, setFilterMode] = useState("All");
   const [filterDuration, setFilterDuration] = useState(null);
-  const [isModalOpen, setIsModalOpen] = useState(false);
-  const [isEditing, setIsEditing] = useState(false);
-  const [editingInterview, setEditingInterview] = useState(null);
   const navigate = useNavigate();
 
   const columns = [

@@ -14,7 +14,7 @@ const EvaluatorFormModal = ({ isEditing, initialValues }) => {
     (state) => state.auth.user
   );
 
-  const roles = ["evaluator", "admin", "hr"];
+  // const roles = ["evaluator", "admin", "hr"];
 
   useEffect(() => {
     if (isModalOpen) {
@@ -31,9 +31,14 @@ const EvaluatorFormModal = ({ isEditing, initialValues }) => {
       const values = await form.validateFields();
       setLoading(true);
 
+      const updatedValues = { ...values, role: "evaluator" }; 
+
       if (isEditing && initialValues?._id) {
         await dispatch(
-          updateUser({ id: initialValues._id, updatedData: values })
+          updateUser({
+            id: initialValues._id,
+            updatedData: updatedValues,
+          })
         ).unwrap();
         message.success("Evaluator updated successfully");
       } else {
@@ -45,7 +50,7 @@ const EvaluatorFormModal = ({ isEditing, initialValues }) => {
       setIsModalOpen(false);
     } catch (error) {
       console.error("Submit failed:", error);
-      message.error(error.message || "An error occurred");
+      message.error(error || "An error occurred");
     } finally {
       setLoading(false);
     }
@@ -81,14 +86,14 @@ const EvaluatorFormModal = ({ isEditing, initialValues }) => {
         title={isEditing ? "Edit Evaluator" : "Add Evaluator"}
         onCancel={handleCancel}
         onOk={handleSubmit}
-        okText={isEditing ? "Update" : "Create"}
         confirmLoading={loading}
         destroyOnClose
+        centered
         footer={
           <Flex justify="flex-end" gap="small" style={{ padding: "16px 24px" }}>
             <Button onClick={handleCancel}>Cancel</Button>
             <Button type="primary" onClick={handleSubmit} loading={loading}>
-              {isEditing ? "Update" : "Create"}
+              {isEditing ? "Update" : "Submit"}
             </Button>
           </Flex>
         }
@@ -97,7 +102,19 @@ const EvaluatorFormModal = ({ isEditing, initialValues }) => {
           <Form.Item
             name="fullName"
             label="Full Name"
-            rules={[{ required: true, message: "Please input the full name!" }]}
+            rules={[
+              { required: true, message: "Please input the full name!" },
+              {
+                validator: (_, value) => {
+                  if (!value || value.length >= 3) {
+                    return Promise.resolve();
+                  }
+                  return Promise.reject(
+                    new Error("Name should be at least 3 characters long")
+                  );
+                },
+              },
+            ]}
           >
             <Input />
           </Form.Item>
@@ -113,7 +130,7 @@ const EvaluatorFormModal = ({ isEditing, initialValues }) => {
             <Input />
           </Form.Item>
 
-          <Form.Item
+          {/* <Form.Item
             name="role"
             label="Role"
             rules={[{ required: true, message: "Please select a role!" }]}
@@ -125,7 +142,7 @@ const EvaluatorFormModal = ({ isEditing, initialValues }) => {
                 </Select.Option>
               ))}
             </Select>
-          </Form.Item>
+          </Form.Item> */}
 
           {isEditing && (
             <Form.Item name="googleId" label="Google ID" hidden>

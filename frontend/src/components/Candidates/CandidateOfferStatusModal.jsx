@@ -25,7 +25,7 @@ const CandidateOfferStatusModal = ({ candidateId }) => {
       message.success(`Offer ${selectedStatus.toLowerCase()} successfully`);
       setIsModalOpen(false);
     } catch (error) {
-      message.error(`Failed to ${selectedStatus.toLowerCase()} offer`);
+      message.error(error || `Failed to ${selectedStatus.toLowerCase()} offer`);
       console.error(error);
     }
   };
@@ -66,7 +66,7 @@ const CandidateOfferStatusModal = ({ candidateId }) => {
         okText={`Yes, mark as ${selectedStatus}`}
         cancelText="Cancel"
         centered
-        okButtonProps={modalButtonProps} // Apply conditional button styling
+        okButtonProps={modalButtonProps}
       >
         <p>
           Are you sure you want to mark this offer as{" "}

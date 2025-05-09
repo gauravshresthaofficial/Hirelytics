@@ -25,6 +25,7 @@ const EvaluateInterviewModal = ({ visible, interview, onCancel, onSubmit }) => {
       form.resetFields();
     } catch (err) {
       message.error("Failed to submit evaluation.");
+      console.error(err);
     }
   };
 
@@ -37,9 +38,9 @@ const EvaluateInterviewModal = ({ visible, interview, onCancel, onSubmit }) => {
         form
           .validateFields()
           .then(handleEvaluation)
-          .catch((info) => console.error("Validation Failed:", info));
+          .catch(() => console.error("Validation Failed"));
       }}
-      okText="Submit Evaluation"
+      okText="Submit"
       centered
       width={600}
     >
@@ -50,7 +51,7 @@ const EvaluateInterviewModal = ({ visible, interview, onCancel, onSubmit }) => {
           style={{ flex: 1 }}
           rules={[
             { required: true, message: "Please enter score" },
-            ({ getFieldValue }) => ({
+            {
               validator(_, value) {
                 if (!value || (value >= 0 && value <= interview?.maxScore)) {
                   return Promise.resolve();
@@ -59,12 +60,11 @@ const EvaluateInterviewModal = ({ visible, interview, onCancel, onSubmit }) => {
                   `Score must be between 0-${interview?.maxScore}`
                 );
               },
-            }),
+            },
           ]}
         >
           <InputNumber
             min={0}
-            max={interview?.maxScore}
             style={{ width: "100%" }}
             placeholder={`Max score: ${interview?.maxScore}`}
           />

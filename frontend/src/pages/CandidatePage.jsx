@@ -206,7 +206,7 @@ const CandidatePage = () => {
             icon={<PlusCircleOutlined />}
             onClick={handleCreate}
           >
-            Create Candidate
+            Add Candidate
           </Button>
         )}
       </Flex>
