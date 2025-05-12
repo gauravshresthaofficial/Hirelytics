@@ -1,192 +1,74 @@
-import React, { useEffect } from "react";
+import React from "react";
 import { useDispatch, useSelector } from "react-redux";
 import { useNavigate } from "react-router-dom";
 import { loginWithGoogle } from "../features/auth/authSlice";
 import { useGoogleLogin } from "@react-oauth/google";
-import google from "/google.svg";
 import {
   Flex,
   Typography,
   Button,
-  message,
-  Skeleton,
   Divider,
   Space,
   Card,
   Steps,
   Image,
+  Grid,
+  Col,
+  Row,
+  message,
 } from "antd";
 import {
   GoogleOutlined,
-  PlusCircleOutlined,
   TeamOutlined,
+  LineChartOutlined,
+  CheckCircleOutlined,
+  DashboardOutlined,
+  UserOutlined,
 } from "@ant-design/icons";
-import { DotChartOutlined } from "@ant-design/icons";
 
+const { useBreakpoint } = Grid;
 const { Title, Text } = Typography;
 const { Step } = Steps;
 
-const HiringStepsSkeleton = () => {
-  return (
-    <div
-      style={{
-        padding: "2rem",
-        width: "40rem",
-        position: "absolute",
-        top: "14rem",
-        left: "20rem",
-        opacity: "60%",
-      }}
-    >
-      <Steps current={1} size="default">
-        <Step title="Applied" />
-        <Step title="Assessment" />
-        <Step title="Interview" />
-        <Step title="Hired" />
-      </Steps>
-    </div>
-  );
-};
-
-const ChartSkeleton = () => {
-  const bars = Array.from({ length: 7 });
-
+const FeatureCard = ({ icon, title, description }) => {
   return (
     <Card
+      hoverable
       style={{
-        height: 300,
-        margin: "2rem auto",
-        padding: "1.5rem",
-        borderRadius: "16px",
-        boxShadow: "0 8px 16px rgba(0,0,0,0.05)",
-        position: "fixed",
-        bottom: "1rem",
-        left: "8rem",
-        width: "36rem",
-        zIndex: "-1",
+        borderRadius: 12,
+        height: "100%",
+        boxShadow: "0 4px 12px rgba(0,0,0,0.05)",
       }}
     >
-      <div
-        style={{
-          display: "flex",
-          alignItems: "flex-end",
-          justifyContent: "space-between",
-          height: "160px",
-          padding: "0 12px",
-          borderLeft: "1px solid #f0f0f0",
-          borderBottom: "1px solid #f0f0f0",
-          position: "relative",
-        }}
-      >
-        {/* Y-axis ticks */}
-        {[120, 80, 40, 0].map((val, i) => (
-          <Text
-            key={i}
-            type="secondary"
-            style={{
-              position: "absolute",
-              left: 0,
-              bottom: `${(val / 160) * 100}%`,
-              fontSize: 12,
-              transform: "translateX(-110%)",
-            }}
-          >
-            {val}
-          </Text>
-        ))}
-
-        {/* Bars */}
-        {bars.map((_, index) => (
-          <div
-            key={index}
-            style={{
-              width: 24,
-              height: `${Math.random() * 140 + 40}px`,
-              backgroundColor: "#f0f0f0",
-              borderRadius: 4,
-              animation: "pulse 1.5s infinite ease-in-out",
-            }}
-          />
-        ))}
-      </div>
-
-      {/* X-axis labels (placeholder text) */}
-      <div
-        style={{
-          display: "flex",
-          justifyContent: "space-between",
-          marginTop: 12,
-          padding: "0 12px",
-        }}
-      >
-        {[
-          "Applied",
-          "Shortlisted",
-          "Assessment",
-          "Interview",
-          "Offer",
-          "Hired",
-          "Rejected",
-        ].map((day, idx) => (
-          <Text key={idx} type="secondary" style={{ fontSize: 12 }}>
-            {day}
-          </Text>
-        ))}
-      </div>
+      <Space direction="vertical" size="middle">
+        <div style={{ fontSize: 32 }}>{icon}</div>
+        <Title level={4} style={{ margin: 0 }}>
+          {title}
+        </Title>
+        <Text type="secondary">{description}</Text>
+      </Space>
     </Card>
   );
 };
 
-const SkeletonComponent = () => {
-  const active = true;
-  const block = true;
-  const size = "default";
-  const buttonShape = "default";
-  const avatarShape = "circle";
+const HiringProcessVisualization = () => {
   return (
-    <Flex
-      gap="middle"
-      vertical
-      style={{
-        position: "fixed",
-        top: 270,
-        right: 200,
-        width: "200px",
-      }}
-    >
-      <Space>
-        <Skeleton.Button
-          active={active}
-          size={size}
-          shape={buttonShape}
-          block={block}
-        />
-        <Skeleton.Avatar active={active} size={size} shape={avatarShape} />
-        <Skeleton.Input active={active} size={size} />
-      </Space>
-      <Skeleton.Button
-        active={active}
-        size={size}
-        shape={buttonShape}
-        block={block}
-      />
-      <Skeleton.Input active={active} size={size} block={block} />
-      <Space>
-        <Skeleton.Image active={active} />
-        <Skeleton.Node active={active} style={{ width: 160 }} />
-        <Skeleton.Node active={active}>
-          <DotChartOutlined style={{ fontSize: 40, color: "#bfbfbf" }} />
-        </Skeleton.Node>
-      </Space>
-    </Flex>
+    <div style={{ maxWidth: 800, margin: "0 auto" }}>
+      <Steps current={1} size="default" responsive={false}>
+        <Step title="Applied" icon={<UserOutlined />} />
+        <Step title="Screened" icon={<CheckCircleOutlined />} />
+        <Step title="Interview" icon={<TeamOutlined />} />
+        <Step title="Hired" icon={<DashboardOutlined />} />
+      </Steps>
+    </div>
   );
 };
 
 const Login = () => {
   const dispatch = useDispatch();
   const navigate = useNavigate();
-
-  const { isLoading, error } = useSelector((state) => state.auth);
+  const screens = useBreakpoint();
+  const { isLoading } = useSelector((state) => state.auth);
 
   const responseGoogle = async (authResult) => {
     if (authResult.code) {
@@ -198,10 +80,11 @@ const Login = () => {
           navigate("/dashboard");
         }
       } catch (err) {
-        console.error("Login failed", err);
+        console.log(err);
+        message.error("Login failed. Please try again.");
       }
     } else {
-      console.error("Google login failed: ", authResult);
+      message.error("Google login failed. Please try again.");
     }
   };
 
@@ -211,170 +94,304 @@ const Login = () => {
     flow: "auth-code",
   });
 
-  const ButtonComponent = ({ text }) => {
-    return (
-      <Button
-        className="animated-pulse"
-        icon={<PlusCircleOutlined />}
-        size="large"
-        color="primary"
-        variant="outlined"
-      >
-        {text}
-      </Button>
-    );
-  };
-
-  useEffect(() => {
-    const messages = [
-      {
-        content: "Candidate Hired Successfully",
-        type: "success",
-        placement: "topRight",
-      },
-      {
-        content: "Candidate Rejected",
-        type: "error",
-        placement: "bottomLeft",
-      },
-    ];
-
-    let index = 0;
-
-    const interval = setInterval(() => {
-      const current = messages[index % messages.length];
-      message.open({
-        content: current.content,
-        type: current.type,
-        className: "animated-message",
-        style:
-          current.placement === "topRight"
-            ? { position: "fixed", right: "40%", top: 250 }
-            : { position: "fixed", right: 350, top: 100 },
-        duration: 2,
-      });
-      index++;
-    }, 3000);
-
-    return () => clearInterval(interval); // cleanup
-  }, []);
-
   return (
-    <Flex
-      style={{ width: "100vw", height: "100vh", overflow: "auto" }}
-      vertical
-    >
-      <Flex
-        justify="space-between"
-        align="center"
-        style={{ width: "100%", padding: "1.2rem 3rem 0 3rem" }}
+    <div style={{ minHeight: "100vh", overflowX: "hidden" }}>
+      {/* Header */}
+      <header
+        style={{
+          padding: screens.xs ? "1rem" : "1.5rem 3rem",
+          display: "flex",
+          justifyContent: "space-between",
+          alignItems: "center",
+          position: "sticky",
+          top: 0,
+          zIndex: 100,
+          background: "rgba(255, 255, 255, 0.9)",
+          backdropFilter: "blur(8px)",
+        }}
       >
         <Title
+          level={3}
           style={{
-            fontSize: "1.2rem",
+            margin: 0,
             fontWeight: 600,
+            display: "flex",
+            alignItems: "center",
+            gap: 8,
           }}
         >
+          <LineChartOutlined />
           Hirelytics
         </Title>
-        <Button
-          variant="outlined"
-          shape="round"
-          size="large"
-          onClick={googleLogin}
-          style={{ fontWeight: 500 }}
-        >
-          <Flex align="center" gap="small">
-            <Image
-              src={google}
-              preview={false}
-              style={{ width: "auto", height: 24 }}
-            />
-            Sign in with Google
-          </Flex>
-        </Button>
-      </Flex>
-      <Divider />
-      <Flex
-        style={{ flexGrow: 1, padding: "1rem 3rem", position: "relative" }}
-        vertical
-      >
-        <Title
-          style={{
-            fontSize: "5rem",
-            width: "80%",
-            flexGrow: 1,
-            fontWeight: 800,
-          }}
-        >
-          Where Hiring Becomes a Smart Habit.
-        </Title>
-        <HiringStepsSkeleton />
-        <SkeletonComponent />
-        <ChartSkeleton />
-        <TeamOutlined
-          style={{
-            fontSize: "8rem",
-            opacity: "10%",
-            position: "absolute",
-            top: "1rem",
-            right: "12rem",
-          }}
-        />
+        <Space>
+          <Button
+            type="text"
+            size="large"
+            onClick={() => {
+              const featuresSection = document.getElementById("features");
+              if (featuresSection) {
+                featuresSection.scrollIntoView({
+                  behavior: "smooth",
+                });
+              }
+            }}
+          >
+            Features
+          </Button>
+          <Button
+            type="primary"
+            size="large"
+            onClick={googleLogin}
+            icon={<GoogleOutlined />}
+            loading={isLoading}
+          >
+            Get Started
+          </Button>
+        </Space>
+      </header>
 
-        <Card
-          style={{
-            position: "fixed",
-            top: "0",
-            right: "50%",
-            transform: "translate(50%, -80%)",
-            width: "36rem",
-            zIndex: "-1",
-          }}
-        >
-          <Skeleton avatar paragraph={{ rows: 4 }} active />
-        </Card>
-        <Card
-          className="animate-moving"
-          rounded
-          style={{
-            position: "fixed",
-            right: 0,
-            top: "4rem",
-            width: "12px",
-            height: "400px",
-            background: "black",
-            opacity: "40%",
-          }}
-        ></Card>
-        <Flex justify="space-between" align="center" style={{ width: "100%" }}>
-          <ButtonComponent text="Candidate" />
-          <Text style={{ width: "45%", fontWeight: "lighter" }}>
-            Hirelytics is a smart and intuitive hiring management platform built
-            to simplify every step of your recruitment journey. From seamless
-            candidate tracking to real-time application updates and performance
-            insights, Hirelytics helps you make faster, smarter hiring
-            decisions—all in one place. Say goodbye to messy spreadsheets and
-            disconnected workflows. With clean design, powerful tools, and
-            automated updates, Hirelytics keeps your team organized, efficient,
-            and focused on finding the right talent. Whether you're a startup or
-            a growing company, Hirelytics is the easiest way to streamline your
-            hiring process and build stronger teams—faster.
-          </Text>
-        </Flex>
-      </Flex>
-      <Text
-        type="secondary"
+      {/* Hero Section */}
+      <section
         style={{
-          fontSize: 12,
-          padding: "1rem 3rem ",
-          width: "100%",
+          padding: screens.xs ? "2rem 1rem" : "4rem 3rem",
+          position: "relative",
+        }}
+      >
+        <Row gutter={[48, 48]} align="middle">
+          <Col xs={24} md={12}>
+            <Title
+              style={{
+                fontSize: screens.xs
+                  ? "2.5rem"
+                  : screens.md
+                  ? "3.5rem"
+                  : "4rem",
+                fontWeight: 800,
+                lineHeight: 1.2,
+                marginBottom: 24,
+              }}
+            >
+              Where Hiring Becomes a{" "}
+              <span style={{ color: "#1890ff" }}>Smart Habit</span>
+            </Title>
+            <Text
+              style={{
+                fontSize: screens.xs ? 16 : 18,
+                display: "block",
+                marginBottom: 40,
+                color: "#444",
+              }}
+            >
+              Streamline your recruitment process with powerful analytics and
+              intuitive candidate management.
+            </Text>
+            <Space size="large">
+              <Button
+                type="primary"
+                size="large"
+                onClick={googleLogin}
+                icon={<GoogleOutlined />}
+                loading={isLoading}
+              >
+                Get Started
+              </Button>
+              <Button size="large">Learn More</Button>
+            </Space>
+          </Col>
+          <Col xs={24} md={12}>
+            <Card
+              style={{
+                borderRadius: 16,
+                boxShadow: "0 16px 32px rgba(0,0,0,0.1)",
+                overflow: "hidden",
+              }}
+            >
+              <HiringProcessVisualization />
+              <div style={{ height: 300, position: "relative", marginTop: 24 }}>
+                <div
+                  style={{
+                    position: "absolute",
+                    bottom: 0,
+                    left: 0,
+                    right: 0,
+                    height: "80%",
+                    background: "linear-gradient(to right, #1890ff, #36cfc9)",
+                    borderRadius: 8,
+                    opacity: 0.1,
+                  }}
+                />
+                <div
+                  style={{
+                    position: "absolute",
+                    bottom: "10%",
+                    left: "10%",
+                    right: "10%",
+                    height: "60%",
+                    background: "linear-gradient(to right, #1890ff, #36cfc9)",
+                    borderRadius: 8,
+                    opacity: 0.2,
+                  }}
+                />
+                <div
+                  style={{
+                    position: "absolute",
+                    bottom: "20%",
+                    left: "20%",
+                    right: "20%",
+                    height: "40%",
+                    background: "linear-gradient(to right, #1890ff, #36cfc9)",
+                    borderRadius: 8,
+                    opacity: 0.3,
+                  }}
+                />
+              </div>
+            </Card>
+          </Col>
+        </Row>
+      </section>
+
+      {/* Features Section */}
+      <section
+        id="features"
+        style={{
+          padding: screens.xs ? "2rem 1rem" : "4rem 3rem",
+          background: "#f9f9f9",
+        }}
+      >
+        <Title level={2} style={{ textAlign: "center", marginBottom: 48 }}>
+          Powerful Features for{" "}
+          <span style={{ color: "#1890ff" }}>Smart Hiring</span>
+        </Title>
+        <Row gutter={[24, 24]}>
+          <Col xs={24} sm={12} md={8}>
+            <FeatureCard
+              icon={<DashboardOutlined />}
+              title="Real-time Analytics"
+              description="Track your hiring pipeline with live dashboards and comprehensive metrics."
+            />
+          </Col>
+          <Col xs={24} sm={12} md={8}>
+            <FeatureCard
+              icon={<TeamOutlined />}
+              title="Candidate Management"
+              description="Organize applicants through every stage of your hiring process."
+            />
+          </Col>
+          <Col xs={24} sm={12} md={8}>
+            <FeatureCard
+              icon={<CheckCircleOutlined />}
+              title="Smart Pipeline Routing"
+              description="Automatically move candidates to next stages based on assessment scores and interview feedback."
+            />
+          </Col>
+        </Row>
+      </section>
+
+      {/* CTA Section */}
+      <section
+        style={{
+          padding: screens.xs ? "3rem 1rem" : "5rem 3rem",
           textAlign: "center",
         }}
       >
-        By continuing, you agree to our Terms of Service and Privacy Policy.
-      </Text>
-    </Flex>
+        <Title level={2} style={{ marginBottom: 16 }}>
+          Ready to Transform Your Hiring Process?
+        </Title>
+        <Text
+          style={{
+            fontSize: screens.xs ? 16 : 18,
+            display: "block",
+            marginBottom: 40,
+            color: "#444",
+            maxWidth: 800,
+            marginLeft: "auto",
+            marginRight: "auto",
+          }}
+        >
+          Join hundreds of companies who have made hiring smarter with
+          Hirelytics.
+        </Text>
+        <Button
+          type="primary"
+          size="large"
+          onClick={googleLogin}
+          icon={<GoogleOutlined />}
+          loading={isLoading}
+          style={{ height: 50, padding: "0 32px", fontSize: 16 }}
+        >
+          Get Started for Free
+        </Button>
+      </section>
+
+      {/* Footer */}
+      <footer
+        style={{
+          padding: "2rem 3rem",
+          background: "#001529",
+          color: "rgba(255,255,255,0.65)",
+        }}
+      >
+        <Row gutter={[48, 24]}>
+          <Col xs={24} md={8}>
+            <Title
+              level={4}
+              style={{ color: "rgba(255,255,255,0.9)", marginBottom: 16 }}
+            >
+              <LineChartOutlined /> Hirelytics
+            </Title>
+            <Text>
+              Making hiring smarter, faster, and more efficient through data and
+              automation.
+            </Text>
+          </Col>
+          <Col xs={24} md={8}>
+            <Title
+              level={4}
+              style={{ color: "rgba(255,255,255,0.9)", marginBottom: 16 }}
+            >
+              Resources
+            </Title>
+            <Space direction="vertical">
+              <a href="#" style={{ color: "rgba(255,255,255,0.65)" }}>
+                Documentation
+              </a>
+              <a href="#" style={{ color: "rgba(255,255,255,0.65)" }}>
+                Blog
+              </a>
+              <a href="#" style={{ color: "rgba(255,255,255,0.65)" }}>
+                Support
+              </a>
+            </Space>
+          </Col>
+          <Col xs={24} md={8}>
+            <Title
+              level={4}
+              style={{ color: "rgba(255,255,255,0.9)", marginBottom: 16 }}
+            >
+              Legal
+            </Title>
+            <Space direction="vertical">
+              <a href="#" style={{ color: "rgba(255,255,255,0.65)" }}>
+                Privacy Policy
+              </a>
+              <a href="#" style={{ color: "rgba(255,255,255,0.65)" }}>
+                Terms of Service
+              </a>
+            </Space>
+          </Col>
+        </Row>
+        <Divider style={{ borderColor: "rgba(255,255,255,0.1)" }} />
+        <Text
+          style={{
+            textAlign: "center",
+            display: "block",
+            color: "rgba(255,255,255,0.65)",
+          }}
+        >
+          © {new Date().getFullYear()} Hirelytics. All rights reserved.
+        </Text>
+      </footer>
+    </div>
   );
 };
 
