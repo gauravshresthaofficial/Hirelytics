@@ -15,6 +15,7 @@ import {
   MenuUnfoldOutlined,
   MenuFoldOutlined,
   DashboardOutlined,
+  AppstoreOutlined,
   TeamOutlined,
   FileTextOutlined,
   CalendarOutlined,
@@ -59,7 +60,7 @@ const AppLayout = ({ children }) => {
   const menuItems = [
     {
       key: "1",
-      icon: <DashboardOutlined />,
+      icon: <AppstoreOutlined />,
       label: "Dashboard",
       onClick: () => navigate("/dashboard"),
     },
