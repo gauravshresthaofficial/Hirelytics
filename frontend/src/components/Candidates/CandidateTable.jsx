@@ -10,6 +10,9 @@ const CandidateTable = ({
   onPaginationChange,
   onViewProfile,
   onEdit,
+  filteredInfo,
+  setFilteredInfo,
+  positionOptions,
 }) => {
   const columns = [
     {
@@ -27,11 +30,31 @@ const CandidateTable = ({
       title: "Applied Position",
       dataIndex: "appliedPosition",
       key: "appliedPosition",
+      filters: positionOptions,
+      onFilter: (value, record) => record.appliedPosition === value,
     },
     {
       title: "Status",
       dataIndex: "currentStatus",
       key: "currentStatus",
+      filters: [
+        { text: "Applied", value: "Applied" },
+        { text: "Assessment Scheduled", value: "Assessment Scheduled" },
+        { text: "Assessment In Progress", value: "Assessment In Progress" },
+        { text: "Assessment Completed", value: "Assessment Completed" },
+        { text: "Assessment Evaluated", value: "Assessment Evaluated" },
+        { text: "Interview Scheduled", value: "Interview Scheduled" },
+        { text: "Interview In Progress", value: "Interview In Progress" },
+        { text: "Interview Completed", value: "Interview Completed" },
+        { text: "Interview Evaluated", value: "Interview Evaluated" },
+        { text: "Offer Extended", value: "Offer Extended" },
+        { text: "Offer Accepted", value: "Offer Accepted" },
+        { text: "Hired", value: "Hired" },
+        { text: "Rejected", value: "Rejected" },
+      ],
+      onFilter: (value, record) => record.currentStatus === value,
+      filterMultiple: true,
+      filteredValue: filteredInfo.currentStatus || null,
       render: (currentStatus) => (
         <Tag color={getStatusTagColor(currentStatus)}>
           {currentStatus || "Not Started"}
@@ -42,6 +65,17 @@ const CandidateTable = ({
       title: "Level",
       dataIndex: "level",
       key: "level",
+      filters: [
+        { text: "Entry-Level", value: "Entry-Level" },
+        { text: "Junior", value: "Junior" },
+        { text: "Mid-Level", value: "Mid-Level" },
+        { text: "Senior", value: "Senior" },
+        { text: "Lead", value: "Lead" },
+        { text: "Manager", value: "Manager" },
+        { text: "Executive", value: "Executive" },
+      ],
+      onFilter: (value, record) => record.level === value,
+      filterMultiple: true,
     },
     {
       title: "Actions",
@@ -106,6 +140,10 @@ const CandidateTable = ({
       dataSource={data}
       rowKey={(record) => record._id}
       loading={loading}
+      onChange={(pagination, filters, sorter) => {
+        setFilteredInfo(filters);
+        onPaginationChange(pagination.current, pagination.pageSize);
+      }}
       pagination={{
         ...pagination,
         showSizeChanger: true,

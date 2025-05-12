@@ -31,6 +31,7 @@ import {
 } from "../features/position/positionSlice";
 import PositionFormModal from "../components/Positions/PositionModalForm";
 import { fetchCandidates } from "../features/candidate/candidateSlice";
+import NotFoundPage from "../components/NotFoundPage";
 
 const { Title, Text } = Typography;
 const { Search } = Input;
@@ -206,14 +207,7 @@ const PositionDetail = () => {
   }
 
   if (!selectedPosition) {
-    return (
-      <div style={{ textAlign: "center", padding: "2rem" }}>
-        <Title level={4}>Position not found</Title>
-        <Button type="primary" onClick={() => navigate(-1)}>
-          Go Back
-        </Button>
-      </div>
-    );
+    return <NotFoundPage />;
   }
 
   return (

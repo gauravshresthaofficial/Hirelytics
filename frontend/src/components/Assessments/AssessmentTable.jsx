@@ -36,6 +36,7 @@ const AssessmentTable = ({ data, loading }) => {
       title: "Mode",
       dataIndex: "mode",
       key: "mode",
+      filterMultiple: false,
       render: (mode) => (
         <Tag color={mode === "Online" ? "blue" : "green"}>{mode}</Tag>
       ),

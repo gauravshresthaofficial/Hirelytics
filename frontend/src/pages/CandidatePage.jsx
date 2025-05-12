@@ -23,24 +23,19 @@ import CandidateFormModal from "../components/Candidates/CandidateFormModal";
 import { fetchPositions } from "../features/position/positionSlice";
 import { SearchOutlined, PlusCircleOutlined } from "@ant-design/icons";
 
-const { Title } = Typography;
-const { Option } = Select;
-
 const CandidatePage = () => {
   const dispatch = useDispatch();
   const navigate = useNavigate();
   const location = useLocation();
-  const { status } = location.state || "";
+  const { status } = location.state || {};
+  const statusFilter = status ? [status] : [];
 
   const { data: candidates, loading } = useSelector(
     (state) => state.candidates
   );
   const positions = useSelector((state) => state.positions.data);
-
+  const [filteredInfo, setFilteredInfo] = useState({});
   const [searchText, setSearchText] = useState("");
-  const [statusFilter, setStatusFilter] = useState(status);
-  const [positionFilter, setPositionFilter] = useState("");
-  const [levelFilter, setLevelFilter] = useState("");
   const [pagination, setPagination] = useState({ current: 1, pageSize: 10 });
   const [isModalVisible, setIsModalVisible] = useState(false);
   const [isEditing, setIsEditing] = useState(false);
@@ -59,21 +54,17 @@ const CandidatePage = () => {
       setPagination(location.state.pagination);
     }
   }, [location.state]);
+  useEffect(() => {
+    if (location.state?.status) {
+      setFilteredInfo((prev) => ({
+        ...prev,
+        currentStatus: [location.state.status],
+      }));
+    }
+  }, [location.state]);
 
   const handleSearchChange = (value) => {
     setSearchText(value.toLowerCase());
-  };
-
-  const handleStatusFilterChange = (value) => {
-    setStatusFilter(value);
-  };
-
-  const handlePositionFilterChange = (value) => {
-    setPositionFilter(value);
-  };
-
-  const handleLevelFilterChange = (value) => {
-    setLevelFilter(value);
   };
 
   const handlePaginationChange = (current, pageSize) => {
@@ -125,20 +116,13 @@ const CandidatePage = () => {
       const matchesSearch =
         candidate?.fullName?.toLowerCase().includes(searchText) ||
         candidate?.email?.toLowerCase().includes(searchText);
-      const matchesStatus = statusFilter
-        ? candidate.currentStatus === statusFilter
-        : true;
-      const matchesPosition = positionFilter
-        ? candidate.appliedPosition === positionFilter
-        : true;
-      const matchesLevel = levelFilter ? candidate.level === levelFilter : true;
-      return matchesSearch && matchesStatus && matchesPosition && matchesLevel;
+      return matchesSearch;
     });
-  }, [candidates, searchText, statusFilter, positionFilter, levelFilter]);
+  }, [candidates, searchText]);
 
   const positionOptions = positions.map((position) => ({
+    text: position.positionName,
     value: position.positionName,
-    label: position.positionName,
   }));
 
   return (
@@ -151,53 +135,6 @@ const CandidatePage = () => {
             value={searchText}
             onChange={(e) => handleSearchChange(e.target.value)}
             style={{ width: 300 }}
-          />
-          {/* Filters */}
-          <Select
-            placeholder="Select position"
-            style={{ width: "12rem" }}
-            onChange={handlePositionFilterChange}
-            allowClear
-            options={positionOptions}
-          />
-          <Select
-            placeholder="Select status"
-            style={{ width: "12rem" }}
-            value={statusFilter}
-            onChange={handleStatusFilterChange}
-            allowClear
-          >
-            <Option value="Applied">Applied</Option>
-            <Option value="Assessment Scheduled">Assessment Scheduled</Option>
-            <Option value="Assessment In Progress">
-              Assessment In Progress
-            </Option>
-            <Option value="Assessment Completed">Assessment Completed</Option>
-            <Option value="Assessment Evaluated">Assessment Evaluated</Option>
-            <Option value="Interview Scheduled">Interview Scheduled</Option>
-            <Option value="Interview In Progress">Interview In Progress</Option>
-            <Option value="Interview Completed">Interview Completed</Option>
-            <Option value="Interview Evaluated">Interview Evaluated</Option>
-            <Option value="Offer Extended">Offer Extended</Option>
-            <Option value="Offer Accepted">Offer Accepted</Option>
-            <Option value="Hired">Hired</Option>
-            <Option value="Rejected">Rejected</Option>
-          </Select>
-
-          <Select
-            placeholder="Select level"
-            style={{ width: "12rem" }}
-            allowClear
-            options={[
-              { value: "Entry-Level", label: "Entry-Level" },
-              { value: "Junior", label: "Junior" },
-              { value: "Mid-Level", label: "Mid-Level" },
-              { value: "Senior", label: "Senior" },
-              { value: "Lead", label: "Lead" },
-              { value: "Manager", label: "Manager" },
-              { value: "Executive", label: "Executive" },
-            ]}
-            onChange={handleLevelFilterChange}
           />
         </Space>
         {role.toLowerCase() != "evaluator" && (
@@ -219,6 +156,10 @@ const CandidatePage = () => {
         onPaginationChange={handlePaginationChange}
         onViewProfile={handleViewProfile}
         onEdit={handleEdit}
+        statusFilter={statusFilter}
+        positionOptions={positionOptions}
+        filteredInfo={filteredInfo}
+        setFilteredInfo={setFilteredInfo}
       />
 
       {/* Modal */}

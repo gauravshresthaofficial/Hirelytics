@@ -5,13 +5,11 @@ import { useNavigate } from "react-router-dom";
 const NotFoundPage = () => {
   const navigate = useNavigate();
 
-  // Function to navigate back, with a fallback to home
   const goBack = () => {
-    navigate(-1); // Try to go back to the previous page
+    navigate(-1);
   };
 
   useEffect(() => {
-    // Optional: You could add some logging or analytics here
     console.warn("404 - Page Not Found");
   }, []);
 
