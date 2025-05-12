@@ -195,7 +195,10 @@ const Dashboard = () => {
       {/* Interview Stats + Assessment Overview */}
       <Flex
         gap="middle"
-        style={{ flexDirection: screens.md ? "row" : "column" }}
+        style={{
+          flexDirection: screens.md ? "row" : "column",
+          maxWidth: "100%",
+        }}
       >
         <Suspense fallback={<Spin tip="Loading Interview Stats..." />}>
           <Card title="Interview Stats" style={{ flex: 1 }}>

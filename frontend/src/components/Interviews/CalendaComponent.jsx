@@ -24,6 +24,8 @@ import {
   CustomerServiceOutlined,
   PlusOutlined,
   CloseOutlined,
+  UserOutlined,
+  CalendarOutlined,
 } from "@ant-design/icons";
 import { useNavigate } from "react-router-dom";
 import { fetchCandidates } from "../../features/candidate/candidateSlice";
@@ -221,28 +223,66 @@ const CalendaComponent = () => {
                 >
                   <List.Item.Meta
                     title={
-                      <Flex wrap gap="small">
+                      <Flex wrap="wrap" gap="small" align="center">
                         <Tag
-                          color={event.type === "interview" ? "blue" : "green"}
+                          color={
+                            event.type === "interview"
+                              ? "blue"
+                              : event.type === "assessment"
+                              ? "purple"
+                              : "green"
+                          }
+                          style={{
+                            fontWeight: 600,
+                            textTransform: "uppercase",
+                            letterSpacing: 0.5,
+                            marginRight: 8,
+                          }}
                         >
-                          {event.type.toUpperCase()}
+                          {event.type}
                         </Tag>
-                        <Text ellipsis style={{ maxWidth: 220 }}>
+                        <Text
+                          ellipsis={{ tooltip: event.title }}
+                          style={{
+                            maxWidth: 300,
+                            fontWeight: 600,
+                            fontSize: 16,
+                            lineHeight: 1.4,
+                          }}
+                        >
                           {event.title}
                         </Text>
                       </Flex>
                     }
                     description={
-                      <Space direction="vertical" size={0}>
+                      <Space direction="vertical" size={4}>
                         <Text
                           type="secondary"
-                          ellipsis
-                          style={{ maxWidth: 220 }}
+                          ellipsis={{
+                            tooltip: `Candidate: ${event.candidate}`,
+                          }}
+                          style={{
+                            maxWidth: 300,
+                            display: "block",
+                            fontSize: 14,
+                          }}
                         >
-                          Candidate: {event.candidate}
+                          <UserOutlined style={{ marginRight: 6 }} />
+                          {event.candidate}
                         </Text>
-                        <Text>
-                          {dayjs(event.date).format("MMM D, YYYY h:mm A")}
+                        <Text
+                          style={{
+                            color: "#666",
+                            fontSize: 13,
+                            display: "flex",
+                            alignItems: "center",
+                            gap: 6,
+                          }}
+                        >
+                          <CalendarOutlined />
+                          {dayjs(event.date).format("ddd, MMM D, YYYY")}
+                          <ClockCircleOutlined style={{ marginLeft: 8 }} />
+                          {dayjs(event.date).format("h:mm A")}
                         </Text>
                       </Space>
                     }

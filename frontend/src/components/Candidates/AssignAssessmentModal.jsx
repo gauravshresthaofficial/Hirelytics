@@ -22,24 +22,41 @@ const AssignAssessmentModal = ({ candidate }) => {
 
   const [visible, setVisible] = useState(false);
   const [form] = Form.useForm();
-  const [selectedCandidateId, setSelectedCandidateId] = useState(null);
+  const [selectedCandidateIds, setSelectedCandidateIds] = useState([]);
 
-  // Filter eligible candidates
-  const eligibleCandidates = candidates.filter((c) =>
-    ["Assessment Evaluated", "Applied"].includes(c.currentStatus)
-  );
+  const [selectedAssessmentId, setSelectedAssessmentId] = useState(null);
+
+  const eligibleCandidates = candidates.filter((c) => {
+    const statusEligible = ["Assessment Evaluated", "Applied"].includes(
+      c.currentStatus
+    );
+    console.log(c.assessments);
+    const hasAlreadyAssessment = c.assessments?.some(
+      (a) => a.assessmentId === selectedAssessmentId
+    );
+    return statusEligible && (!selectedAssessmentId || !hasAlreadyAssessment);
+  });
 
   useEffect(() => {
     if (visible) {
+      // Initialize form values
       form.setFieldsValue({
         scheduledDate: getNextThursdayAtTwo(),
       });
-      dispatch(fetchCandidates());
-      dispatch(fetchAssessments());
-      dispatch(fetchUsers());
-    }
-  }, [form, dispatch]);
 
+      // Fetch data
+    } else {
+      // Reset form when modal closes
+      form.resetFields();
+      setSelectedCandidateIds([]);
+      setSelectedAssessmentId(null);
+    }
+    if (!candidates || candidates.length == 0) dispatch(fetchCandidates());
+    if (!assessments || assessments.length == 0) dispatch(fetchAssessments());
+    if (!users || users.length == 0) dispatch(fetchUsers());
+  }, []); // Only depend on visible
+
+  // Move stable functions outside the component
   const getNextThursdayAtTwo = () => {
     const now = moment().tz(NEPAL_TIMEZONE);
     const currentWeekday = now.day();
@@ -50,10 +67,10 @@ const AssignAssessmentModal = ({ candidate }) => {
   };
 
   const handleSubmit = async (values) => {
-    const candidateId = candidate?._id || selectedCandidateId;
+    const candidateIds = candidate ? [candidate._id] : selectedCandidateIds;
 
-    if (!candidateId) {
-      message.error("Please select a candidate!");
+    if (!candidateIds || candidateIds.length === 0) {
+      message.error("Please select at least one candidate!");
       return;
     }
 
@@ -63,16 +80,20 @@ const AssignAssessmentModal = ({ candidate }) => {
     };
 
     try {
-      await dispatch(
-        addAssessmentToCandidate({ candidateId, assessmentData })
-      ).unwrap();
-      message.success("Assessment assigned successfully!");
+      await Promise.all(
+        candidateIds.map((id) =>
+          dispatch(
+            addAssessmentToCandidate({ candidateId: id, assessmentData })
+          ).unwrap()
+        )
+      );
+      message.success("Assessment(s) assigned successfully!");
       setVisible(false);
       form.resetFields();
-      setSelectedCandidateId(null);
+      setSelectedCandidateIds([]);
     } catch (error) {
       console.log(error);
-      message.error(error || "Failed to assign assessment.");
+      message.error(error || "Failed to assign assessment(s).");
     }
   };
 
@@ -96,16 +117,21 @@ const AssignAssessmentModal = ({ candidate }) => {
         onCancel={() => {
           setVisible(false);
           form.resetFields();
-          setSelectedCandidateId(null);
+          setSelectedCandidateIds(null);
         }}
         onOk={() => {
           form
             .validateFields()
             .then((values) => {
-              if (!candidate && !selectedCandidateId) {
-                message.error("Please select a candidate!");
+              const hasSelectedCandidates =
+                candidate ||
+                (selectedCandidateIds && selectedCandidateIds.length > 0);
+
+              if (!hasSelectedCandidates) {
+                message.error("Please select at least one candidate!");
                 return;
               }
+
               handleSubmit(values);
             })
             .catch((error) => {
@@ -128,12 +154,39 @@ const AssignAssessmentModal = ({ candidate }) => {
             scheduledDate: getNextThursdayAtTwo(),
           }}
         >
+          <Form.Item
+            name="assessmentId"
+            label="Assessment"
+            rules={[{ required: true }]}
+          >
+            <Select
+              placeholder="Select Assessment"
+              onChange={(val) => setSelectedAssessmentId(val)}
+              showSearch
+              filterOption={(input, option) =>
+                option.children.toLowerCase().includes(input.toLowerCase())
+              }
+            >
+              {assessments.map((assessment) => (
+                <Option key={assessment._id} value={assessment._id}>
+                  {assessment.assessmentName}
+                </Option>
+              ))}
+            </Select>
+          </Form.Item>
+
           {!candidate && (
-            <Form.Item label="Candidate" required>
+            <Form.Item
+              name="candidateIds"
+              label="Select Candidates"
+              rules={[{ required: true, message: "Please select candidates" }]}
+            >
               <Select
-                placeholder="Select a candidate"
-                onChange={(value) => setSelectedCandidateId(value)}
-                disabled={eligibleCandidates.length === 0}
+                mode="multiple"
+                placeholder="Select eligible candidates"
+                value={selectedCandidateIds}
+                onChange={(value) => setSelectedCandidateIds(value)}
+                disabled={!selectedAssessmentId}
               >
                 {eligibleCandidates.map((c) => (
                   <Option key={c._id} value={c._id}>
@@ -143,22 +196,6 @@ const AssignAssessmentModal = ({ candidate }) => {
               </Select>
             </Form.Item>
           )}
-
-          <Form.Item
-            name="assessmentId"
-            label="Assessment"
-            rules={[
-              { required: true, message: "Please select an assessment!" },
-            ]}
-          >
-            <Select placeholder="Select an assessment">
-              {assessments.map((a) => (
-                <Option key={a._id} value={a._id}>
-                  {a.assessmentName}
-                </Option>
-              ))}
-            </Select>
-          </Form.Item>
 
           <Form.Item
             name="scheduledDate"

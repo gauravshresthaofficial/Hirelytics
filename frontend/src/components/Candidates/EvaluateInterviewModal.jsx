@@ -38,7 +38,15 @@ const EvaluateInterviewModal = ({ visible, interview, onCancel, onSubmit }) => {
         form
           .validateFields()
           .then(handleEvaluation)
-          .catch(() => console.error("Validation Failed"));
+          .catch((error) => {
+            if (error.errorFields && error.errorFields.length > 0) {
+              const firstErrorMsg = error.errorFields[0].errors[0];
+              message.error(firstErrorMsg);
+            } else {
+              message.error("Validation Error.");
+            }
+            console.error("Validation Failed:", error);
+          });
       }}
       okText="Submit"
       centered

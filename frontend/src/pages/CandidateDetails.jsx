@@ -569,14 +569,18 @@ const CandidateDetails = () => {
                               "MMMM D, YYYY h:mm A"
                             )}
                           </p>
-                          <p>
-                            {interview.interviewType !== "Online" ? (
-                              <strong>Location:</strong>
-                            ) : (
-                              <strong>Link:</strong>
-                            )}{" "}
-                            {interview.interviewLocation}
-                          </p>
+                         <p>
+  {interview.interviewType !== "Online" ? (
+    <>
+      <strong>Location:</strong> {interview.interviewLocation}
+    </>
+  ) : (
+    <>
+      <strong>Link:</strong> {interview.interviewLink}
+    </>
+  )}
+</p>
+
                           <p>
                             <strong>Score:</strong>{" "}
                             {interview?.score !== undefined

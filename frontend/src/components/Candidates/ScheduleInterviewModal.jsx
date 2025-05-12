@@ -24,21 +24,48 @@ const ScheduleInterviewModal = ({ candidate }) => {
   const dispatch = useDispatch();
   const [visible, setVisible] = useState(false);
   const [form] = Form.useForm();
+  const [selectedInterviewId, setSelectedInterviewId] = useState(null);
   const [selectedInterviewMode, setSelectedInterviewMode] = useState(null);
-  const [selectedCandidateId, setSelectedCandidateId] = useState(null);
+  const [selectedCandidateIds, setSelectedCandidateIds] = useState([]);
   const [generatingLink, setGeneratingLink] = useState(false);
 
   const candidates = useSelector((state) => state.candidates.data);
   const interviews = useSelector((state) => state.interviews.data);
   const users = useSelector((state) => state.users.data);
 
-  const eligibleCandidates = candidates.filter((c) =>
-    ["Assessment Evaluated", "Interview Evaluated"].includes(c.currentStatus)
-  );
+  const eligibleCandidates = candidates.filter((c) => {
+    const statusEligible = [
+      "Assessment Evaluated",
+      "Interview Evaluated",
+    ].includes(c.currentStatus);
+    const hasAlreadyInterview = c.interviews?.some(
+      (a) => a.interviewId === selectedInterviewId
+    );
+    return statusEligible && (!selectedInterviewId || !hasAlreadyInterview);
+  });
+
+  useEffect(() => {
+    if (visible) {
+      form.setFieldsValue({
+        scheduledDatetime: dayjs()
+          .add(1, "day")
+          .set("hour", 10)
+          .set("minute", 0),
+      });
+
+      if (!candidates || candidates.length === 0) dispatch(fetchCandidates());
+      if (!interviews || interviews.length === 0) dispatch(fetchInterviews());
+      if (!users || users.length === 0) dispatch(fetchUsers());
+    } else {
+      form.resetFields();
+      setSelectedCandidateIds([]);
+      setSelectedInterviewId(null);
+      setSelectedInterviewMode(null);
+    }
+  }, [visible]);
 
   const generateGoogleMeetLink = () => {
     setGeneratingLink(true);
-    // Simulate API call or generate a random meet link
     setTimeout(() => {
       const randomId = Math.random().toString(36).substring(2, 10);
       const meetLink = `https://meet.google.com/${randomId}`;
@@ -51,6 +78,7 @@ const ScheduleInterviewModal = ({ candidate }) => {
   };
 
   const handleInterviewChange = (interviewId) => {
+    setSelectedInterviewId(interviewId);
     const selectedInterview = interviews.find(
       (interview) => interview._id === interviewId
     );
@@ -62,18 +90,11 @@ const ScheduleInterviewModal = ({ candidate }) => {
     });
   };
 
-  useEffect(() => {
-    if (visible) {
-      dispatch(fetchCandidates());
-      dispatch(fetchInterviews());
-      dispatch(fetchUsers());
-    }
-  }, [form, dispatch]);
-
   const handleSubmit = async (values) => {
-    const candidateId = candidate?._id || selectedCandidateId;
-    if (!candidateId) {
-      message.error("Please select a candidate!");
+    const candidateIds = candidate ? [candidate._id] : selectedCandidateIds;
+
+    if (!candidateIds || candidateIds.length === 0) {
+      message.error("Please select at least one candidate!");
       return;
     }
 
@@ -90,16 +111,19 @@ const ScheduleInterviewModal = ({ candidate }) => {
     };
 
     try {
-      await dispatch(
-        addInterviewToCandidate({ candidateId, interviewData })
-      ).unwrap();
-      message.success("Interview scheduled successfully!");
-      form.resetFields();
+      await Promise.all(
+        candidateIds.map((id) =>
+          dispatch(
+            addInterviewToCandidate({ candidateId: id, interviewData })
+          ).unwrap()
+        )
+      );
+      message.success("Interview(s) scheduled successfully!");
       setVisible(false);
-      setSelectedCandidateId(null);
-      setSelectedInterviewMode(null);
+      form.resetFields();
+      setSelectedCandidateIds([]);
     } catch (error) {
-      message.error(error || "Failed to schedule interview.");
+      message.error(error || "Failed to schedule interview(s).");
     }
   };
 
@@ -125,7 +149,16 @@ const ScheduleInterviewModal = ({ candidate }) => {
   const handleOk = () => {
     form
       .validateFields()
-      .then(handleSubmit)
+      .then((values) => {
+        const hasSelectedCandidates =
+          candidate ||
+          (selectedCandidateIds && selectedCandidateIds.length > 0);
+        if (!hasSelectedCandidates) {
+          message.error("Please select at least one candidate!");
+          return;
+        }
+        handleSubmit(values);
+      })
       .catch((error) => {
         if (error.errorFields && error.errorFields.length > 0) {
           const firstErrorMsg = error.errorFields[0].errors[0];
@@ -139,7 +172,8 @@ const ScheduleInterviewModal = ({ candidate }) => {
 
   const handleCancel = () => {
     form.resetFields();
-    setSelectedCandidateId(null);
+    setSelectedCandidateIds([]);
+    setSelectedInterviewId(null);
     setSelectedInterviewMode(null);
     setVisible(false);
   };
@@ -166,28 +200,6 @@ const ScheduleInterviewModal = ({ candidate }) => {
         width={700}
       >
         <Form form={form} layout="vertical">
-          {!candidate && (
-            <Form.Item
-              name="candidateId"
-              label="Candidate"
-              rules={[
-                { required: true, message: "Please select a candidate!" },
-              ]}
-            >
-              <Select
-                placeholder="Select candidate"
-                onChange={(value) => setSelectedCandidateId(value)}
-                disabled={eligibleCandidates.length === 0}
-              >
-                {eligibleCandidates.map((c) => (
-                  <Option key={c._id} value={c._id}>
-                    {c.fullName}
-                  </Option>
-                ))}
-              </Select>
-            </Form.Item>
-          )}
-
           <Form.Item
             name="interviewId"
             label="Interview"
@@ -205,6 +217,28 @@ const ScheduleInterviewModal = ({ candidate }) => {
               <Option value="hr">HR Interview</Option>
             </Select>
           </Form.Item>
+
+          {!candidate && (
+            <Form.Item
+              name="candidateIds"
+              label="Candidates"
+              rules={[{ required: true, message: "Please select candidates!" }]}
+            >
+              <Select
+                mode="multiple"
+                placeholder="Select eligible candidates"
+                value={selectedCandidateIds}
+                onChange={setSelectedCandidateIds}
+                disabled={!selectedInterviewId}
+              >
+                {eligibleCandidates.map((c) => (
+                  <Option key={c._id} value={c._id}>
+                    {c.fullName}
+                  </Option>
+                ))}
+              </Select>
+            </Form.Item>
+          )}
 
           <Form.Item
             name="scheduledDatetime"
@@ -232,10 +266,7 @@ const ScheduleInterviewModal = ({ candidate }) => {
                   required: true,
                   message: "Please enter meeting link or generate one!",
                 },
-                {
-                  type: "url",
-                  message: "Please enter a valid URL",
-                },
+                { type: "url", message: "Please enter a valid URL" },
               ]}
             >
               <Space.Compact style={{ width: "100%" }}>
@@ -261,10 +292,7 @@ const ScheduleInterviewModal = ({ candidate }) => {
               name="interviewLocation"
               label="Interview Location"
               rules={[
-                {
-                  required: true,
-                  message: "Please enter interview location!",
-                },
+                { required: true, message: "Please enter interview location!" },
               ]}
             >
               <Input placeholder="Enter physical location (e.g., Office Room 5)" />
@@ -278,7 +306,7 @@ const ScheduleInterviewModal = ({ candidate }) => {
           >
             <Select placeholder="Select evaluator">
               {users
-                .filter((user) => user.role.toLowerCase() == "evaluator")
+                .filter((user) => user.role.toLowerCase() === "evaluator")
                 .map((user) => (
                   <Option key={user._id} value={user._id}>
                     {user.fullName}

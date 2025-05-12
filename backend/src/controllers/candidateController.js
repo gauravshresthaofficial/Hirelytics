@@ -519,6 +519,7 @@ const addInterviewToCandidate = async (req, res) => {
       interviewerName: user.fullName,
       scheduledDatetime: req.body.scheduledDatetime,
       interviewLocation: req.body.interviewLocation,
+      interviewLink: req.body.interviewLink,
       sequence: nextSequence,
       status: "Scheduled",
     };

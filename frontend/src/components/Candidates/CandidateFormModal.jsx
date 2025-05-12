@@ -1,4 +1,4 @@
-import React, { useEffect } from "react";
+import React, { useEffect, useState } from "react";
 import {
   Modal,
   Form,
@@ -27,6 +27,7 @@ const CandidateFormModal = ({
   positionOptions,
 }) => {
   const [form] = Form.useForm();
+  const [isLoading, setIsLoading] = useState(false);
 
   useEffect(() => {
     form.resetFields();
@@ -43,6 +44,7 @@ const CandidateFormModal = ({
 
   const handleOk = async () => {
     try {
+      setIsLoading(true);
       const values = await form.validateFields();
       onSubmit(values);
       if (!isEditing) {
@@ -56,6 +58,8 @@ const CandidateFormModal = ({
         message.error("Validation Error.");
       }
       console.error("Validation Failed:", error);
+    } finally {
+      setIsLoading(false);
     }
   };
 
@@ -72,6 +76,7 @@ const CandidateFormModal = ({
         </Title>
       }
       open={open}
+      confirmLoading={isLoading}
       centered
       onCancel={handleCancel}
       onOk={handleOk}
