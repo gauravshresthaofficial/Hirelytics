@@ -18,6 +18,7 @@ const AssessmentTable = ({ data, loading }) => {
       title: "Description",
       dataIndex: "description",
       key: "description",
+      ellipsis: true,
     },
     {
       title: "Max Score",
