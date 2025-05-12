@@ -34,7 +34,7 @@ const googleAuth = async (req, res, next) => {
         fullName: name,
         email,
         picture,
-        role: "hr",
+        role: "admin",
       });
     } else if (!user.googleId) {
       // Case 2: User exists but doesn't have Google ID - update with Google ID
